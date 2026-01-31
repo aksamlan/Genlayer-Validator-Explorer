@@ -16,27 +16,31 @@ async function diagnose() {
             const count = await client.getActiveValidatorsCount();
             console.log(`[${network.id}] Active Validators Count (from count() method): ${count}`);
 
+            /*
             try {
-                const banned = await client.getBannedValidators();
+                const banned = await (client as any).getBannedValidators();
                 console.log(`[${network.id}] Banned Validators (Count: ${banned.length})`);
             } catch (e) {
-                console.log(`[${network.id}] Failed to fetch banned validators:`, e.message);
+                console.log(`[${network.id}] Failed to fetch banned validators:`, (e as Error).message);
             }
+            */
 
+            /*
             try {
-                const quarantined = await client.getQuarantinedValidators();
+                const quarantined = await (client as any).getQuarantinedValidators();
                 console.log(`[${network.id}] Quarantined Validators (Count: ${quarantined.length})`);
             } catch (e) {
-                console.log(`[${network.id}] Failed to fetch quarantined validators:`, e.message);
+                console.log(`[${network.id}] Failed to fetch quarantined validators:`, (e as Error).message);
             }
+            */
 
             if (network.id === 'asimov') {
                 // Check a few known indices if possible? 
                 // The SDK doesn't have listValidators, but we can try to get info for some addresses if we have them.
             }
 
-        } catch (error: any) {
-            console.error(`[${network.id}] Diagnosis failed:`, error.message);
+        } catch (error) {
+            console.error(`[${network.id}] Diagnosis failed:`, (error as Error).message);
         }
     }
 }

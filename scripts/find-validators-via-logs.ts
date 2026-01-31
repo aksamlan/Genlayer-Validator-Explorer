@@ -1,6 +1,6 @@
 import { createPublicClient, http, parseAbiItem, decodeEventLog } from 'viem';
 import { NETWORKS } from '../lib/networks';
-import { STAKING_ABI } from 'genlayer-js/abi/staking';
+
 
 async function findValidators() {
     const network = NETWORKS[0]; // Asimov
@@ -31,7 +31,7 @@ async function findValidators() {
         console.log('Validator Addresses:', addresses);
 
     } catch (error) {
-        console.error('Failed to fetch logs:', error.message);
+        console.error('Failed to fetch logs:', (error as Error).message);
         console.log('Falling back to checking if activeValidatorsCount is actually zero...');
     }
 }

@@ -23,7 +23,7 @@ async function discover() {
             const data = await response.json();
             console.log(`${name}:`, data.result?.address || 'Not found');
         } catch (error) {
-            console.error(`Failed to fetch ${name}:`, error.message);
+            console.error(`Failed to fetch ${name}:`, (error as Error).message);
         }
     }
 }

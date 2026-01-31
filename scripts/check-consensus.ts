@@ -24,7 +24,7 @@ async function checkConsensus() {
         console.log(`Current block: ${blockNum}`);
 
     } catch (error) {
-        console.error('Consensus check failed:', error.message);
+        console.error('Consensus check failed:', (error as Error).message);
     }
 }
 
