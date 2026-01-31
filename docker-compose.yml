@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  genlayer-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: genlayer-validator-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_RPC_ENDPOINT=${NEXT_PUBLIC_RPC_ENDPOINT:-https://genlayer-testnet.rpc.caldera.xyz/http}
+      - NEXT_PUBLIC_DEFAULT_ACCOUNT=${NEXT_PUBLIC_DEFAULT_ACCOUNT:-0x0000000000000000000000000000000000000000}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
