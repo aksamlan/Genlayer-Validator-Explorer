@@ -50,11 +50,19 @@ export class ValidatorService {
                 identity: contractInfo.website || '',
                 logoUri: contractInfo.logoUri || undefined,
                 stake: contractInfo.stake.toString(),
+                selfStake: contractInfo.selfStake.toString(),
+                delegatedStake: contractInfo.delegatedStake.toString(),
+                commission: contractInfo.commission.toString(),
                 shares: contractInfo.shares.toString(),
                 isActive: contractInfo.live,
                 isBanned: contractInfo.banned,
                 pendingDeposits: contractInfo.deposit.toString(),
                 pendingWithdrawals: contractInfo.withdrawal.toString(),
+                uptime: contractInfo.uptime,
+                missedBlocks: contractInfo.missedBlocks,
+                blocksProduced: contractInfo.blocksProduced,
+                consensusScore: contractInfo.consensusScore,
+                appealSuccessRate: contractInfo.appealSuccessRate,
             };
         } catch (error: any) {
             console.error(`[ValidatorService] Error fetching validator ${address}:`, error.message);
@@ -63,11 +71,19 @@ export class ValidatorService {
                 address: address,
                 identity: '',
                 stake: '0',
+                selfStake: '0',
+                delegatedStake: '0',
+                commission: '0',
                 shares: '0',
                 isActive: false,
                 isBanned: false,
                 pendingDeposits: '0',
                 pendingWithdrawals: '0',
+                uptime: 0,
+                missedBlocks: 0,
+                blocksProduced: 0,
+                consensusScore: 0,
+                appealSuccessRate: 0,
             };
         }
     }

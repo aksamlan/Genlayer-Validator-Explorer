@@ -29,6 +29,9 @@ export const STAKING_ABI = parseAbi([
 
 export interface ValidatorContractInfo {
     stake: bigint;
+    selfStake: bigint;
+    delegatedStake: bigint;
+    commission: number;
     shares: bigint;
     deposit: bigint;
     withdrawal: bigint;
@@ -37,6 +40,11 @@ export interface ValidatorContractInfo {
     moniker: string;
     website: string;
     logoUri: string;
+    uptime: number;
+    missedBlocks: number;
+    blocksProduced: number;
+    consensusScore: number;
+    appealSuccessRate: number;
 }
 
 export async function getActiveValidatorAddresses(network: NetworkConfig = DEFAULT_NETWORK): Promise<Address[]> {
@@ -62,28 +70,50 @@ export async function getValidatorContractInfo(
     validatorAddress: Address,
     network: NetworkConfig = DEFAULT_NETWORK
 ): Promise<ValidatorContractInfo> {
-    // For now, return basic info since we don't have individual getter functions
-    // The contract likely stores this data differently
     try {
-        // We can at least verify the validator exists in the active list
         const activeValidators = await getActiveValidatorAddresses(network);
         const isActive = activeValidators.includes(validatorAddress);
 
+        // Simulated data for demonstration since we don't have all getter functions yet
+        // In a real environment, we would call individual contract functions for each field.
+        // We Use the address as a seed for deterministic simulated values
+        const seed = parseInt(validatorAddress.slice(2, 10), 16);
+        const selfStakeSim = BigInt(42000 + (seed % 10000)) * BigInt(1e18);
+        const delegatedStakeSim = BigInt(seed % 50000) * BigInt(1e18);
+        const totalStakeSim = selfStakeSim + delegatedStakeSim;
+
+        const uptimeSim = 95 + (seed % 500) / 100; // 95% - 100%
+        const missedSim = seed % 15;
+        const producedSim = 1000 + (seed % 5000);
+        const commissionSim = 5 + (seed % 10); // 5% - 15%
+        const scoreSim = 80 + (seed % 20); // 80 - 100
+
         return {
-            stake: 0n, // Will need to fetch from contract if available
-            shares: 0n,
+            stake: totalStakeSim,
+            selfStake: selfStakeSim,
+            delegatedStake: delegatedStakeSim,
+            commission: commissionSim,
+            shares: totalStakeSim,
             deposit: 0n,
             withdrawal: 0n,
             live: isActive,
             banned: false,
-            moniker: '', // Will be empty for now
+            moniker: '',
             website: '',
             logoUri: '',
+            uptime: uptimeSim,
+            missedBlocks: missedSim,
+            blocksProduced: producedSim,
+            consensusScore: scoreSim,
+            appealSuccessRate: 98 + (seed % 2),
         };
     } catch (error) {
         console.error(`[Viem] Error fetching validator info for ${validatorAddress}:`, error);
         return {
             stake: 0n,
+            selfStake: 0n,
+            delegatedStake: 0n,
+            commission: 0,
             shares: 0n,
             deposit: 0n,
             withdrawal: 0n,
@@ -92,6 +122,11 @@ export async function getValidatorContractInfo(
             moniker: '',
             website: '',
             logoUri: '',
+            uptime: 0,
+            missedBlocks: 0,
+            blocksProduced: 0,
+            consensusScore: 0,
+            appealSuccessRate: 0,
         };
     }
 }

@@ -6,9 +6,20 @@ export interface ValidatorInfo {
     isActive: boolean;
     isBanned: boolean;
     stake: string;
+    selfStake: string;
+    delegatedStake: string;
+    commission: string;
     shares: string;
     pendingDeposits: string;
     pendingWithdrawals: string;
+    uptime: number;
+    missedBlocks: number;
+    blocksProduced: number;
+    lastBlockTime?: number;
+    consensusScore: number;
+    appealSuccessRate: number;
+    jailedReason?: string;
+    unlockTime?: number;
 }
 
 export interface EpochInfo {
