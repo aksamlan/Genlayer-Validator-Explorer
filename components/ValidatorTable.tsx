@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ValidatorInfo } from "@/types/validator";
 import { truncateAddress, cn, formatNumber } from "@/lib/utils";
-import { Copy, Users, ChevronDown, ChevronUp, ShieldAlert, Award, Percent, Clock } from "lucide-react";
+import { Copy, Users, ChevronDown, ChevronUp, Percent, Clock } from "lucide-react";
 import React, { useState } from "react";
 
 interface ValidatorTableProps {
@@ -104,7 +104,6 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Address</TableHead>
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Stake (Total/Self)</TableHead>
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Performance</TableHead>
-                                <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Score</TableHead>
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Status</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -225,22 +224,6 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                             </div>
                                                             <span className="text-[10px] font-black">{validator.uptime.toFixed(1)}%</span>
                                                         </div>
-                                                        <div className="text-[9px] text-muted-foreground font-bold uppercase tracking-tighter">
-                                                            Blocks: {validator.blocksProduced}
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col items-start gap-1">
-                                                        <Badge variant="outline" className={cn(
-                                                            "bg-white/5 border-white/10 text-[10px] font-black h-5",
-                                                            validator.consensusScore > 90 ? "text-primary" : "text-muted-foreground"
-                                                        )}>
-                                                            {validator.consensusScore}
-                                                        </Badge>
-                                                        <span className="text-[9px] text-muted-foreground font-bold tracking-tighter uppercase opacity-60">
-                                                            Score
-                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -293,43 +276,6 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                                 </div>
                                                             </div>
 
-                                                            {/* Consensus Stats */}
-                                                            <div className="space-y-3">
-                                                                <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-primary tracking-widest">
-                                                                    <Award className="h-3 w-3" />
-                                                                    Consensus
-                                                                </div>
-                                                                <div className="glass-v2 p-4 rounded-xl border border-white/5 space-y-3">
-                                                                    <div className="flex justify-between items-end">
-                                                                        <span className="text-[10px] text-muted-foreground">Appeal Success</span>
-                                                                        <span className="text-sm font-bold text-primary">{validator.appealSuccessRate}%</span>
-                                                                    </div>
-                                                                    <div className="flex justify-between items-end">
-                                                                        <span className="text-[10px] text-muted-foreground">Score Rank</span>
-                                                                        <span className="text-sm font-bold"># {index + 1}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Jailed Info (If applicable) */}
-                                                            <div className="space-y-3">
-                                                                <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-                                                                    <ShieldAlert className="h-3 w-3" />
-                                                                    Security Status
-                                                                </div>
-                                                                <div className="glass-v2 p-4 rounded-xl border border-white/5 h-[84px] flex items-center justify-center">
-                                                                    {validator.isBanned || validator.jailedReason ? (
-                                                                        <div className="text-center">
-                                                                            <p className="text-[10px] text-destructive font-black uppercase">{validator.jailedReason || 'BANNED BY PROTOCOL'}</p>
-                                                                            {validator.unlockTime && (
-                                                                                <p className="text-[9px] text-muted-foreground mt-1">Unlocks: {new Date(validator.unlockTime).toLocaleDateString()}</p>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <p className="text-[10px] text-primary font-black uppercase tracking-widest">In Good Standing</p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
