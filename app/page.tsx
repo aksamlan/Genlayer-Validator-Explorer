@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { validatorService } from '@/lib/validator-service';
 import { NetworkOverview } from '@/components/NetworkOverview';
 import { ValidatorTable } from '@/components/ValidatorTable';
+import { AlertSection } from '@/components/AlertSection';
 import { LinksSection } from '@/components/LinksSection';
 import { DEFAULT_NETWORK, NetworkConfig } from '@/lib/networks';
 import type { NetworkStats } from '@/types/validator';
@@ -121,7 +122,7 @@ export default function Home() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => fetchData()}
-                            className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-300 group border border-white/5 hover:border-primary/20 hover:shadow-[0_0_20_rgba(165,90,45,0.2)]"
+                            className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-300 group border border-white/5 hover:border-primary/20 hover:shadow-[0_0_20px_rgba(165,90,45,0.2)]"
                             disabled={isLoading}
                         >
                             <RefreshCw className={cn(
@@ -174,6 +175,8 @@ export default function Home() {
                     metrics={networkMetrics}
                 />
             </div>
+
+            <AlertSection validators={networkStats?.validators || []} />
 
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
