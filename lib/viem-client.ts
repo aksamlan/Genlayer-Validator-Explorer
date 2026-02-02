@@ -1,5 +1,8 @@
-import { createPublicClient, http, parseAbi, type Address } from 'viem';
+import { createPublicClient, http, parseAbi, type Address, parseAbiItem } from 'viem';
 import { NetworkConfig, DEFAULT_NETWORK } from './networks';
+
+// Genesis block for asimov network or discovery start
+export const DISCOVERY_START_BLOCK = 4632386n;
 
 // Cache for client instances
 const clients: Record<string, ReturnType<typeof createPublicClient>> = {};
@@ -58,23 +61,61 @@ export async function getActiveValidatorAddresses(network: NetworkConfig = DEFAU
             functionName: 'activeValidators',
         }) as Address[];
 
-        // Filter out zero addresses
-        return validators.filter(addr => addr !== '0x0000000000000000000000000000000000000000');
+        // Filter out zero addresses and normalize to lowercase
+        return validators
+            .filter(addr => addr !== '0x0000000000000000000000000000000000000000')
+            .map(addr => addr.toLowerCase() as Address);
     } catch (error) {
         console.error('[Viem] Error fetching active validators:', error);
         throw error;
     }
 }
 
+/**
+ * Discovers all validators by scanning for ValidatorJoin events.
+ * This includes both active and inactive/pending validators.
+ */
+export async function getAllValidatorAddresses(network: NetworkConfig = DEFAULT_NETWORK): Promise<Address[]> {
+    const client = getViemClient(network);
+    const stakingAddress = network.chainConfig.stakingContract.address as Address;
+
+    try {
+        const currentBlock = await client.getBlockNumber();
+        const validators = new Set<string>();
+
+        // For large ranges, we should batch, but for ~1M blocks and few events, we can try one call.
+        // If it fails, we'll need batching.
+        const logs = await client.getLogs({
+            address: stakingAddress,
+            event: parseAbiItem('event ValidatorJoin(address operator, address validator, uint256 amount)'),
+            fromBlock: DISCOVERY_START_BLOCK,
+            toBlock: currentBlock
+        });
+
+        logs.forEach(log => {
+            if (log.args.validator) {
+                validators.add(log.args.validator.toLowerCase());
+            }
+        });
+
+        return Array.from(validators) as Address[];
+    } catch (error) {
+        console.error('[Viem] Error discovered validators via logs:', error);
+        // Fallback to active addresses if discovery fails
+        return getActiveValidatorAddresses(network);
+    }
+}
+
 export async function getValidatorContractInfo(
     validatorAddress: Address,
-    network: NetworkConfig = DEFAULT_NETWORK
+    network: NetworkConfig = DEFAULT_NETWORK,
+    activeAddresses?: Address[]
 ): Promise<ValidatorContractInfo> {
     try {
-        const activeValidators = await getActiveValidatorAddresses(network);
-        const isActive = activeValidators.includes(validatorAddress);
+        const activeSet = activeAddresses || await getActiveValidatorAddresses(network);
+        const isActive = activeSet.some(a => a.toLowerCase() === validatorAddress.toLowerCase());
 
-        // Simulated data for demonstration since we don't have all getter functions yet
+        // The rest of the function remains the same (simulated for now)
         // In a real environment, we would call individual contract functions for each field.
         // We Use the address as a seed for deterministic simulated values
         const seed = parseInt(validatorAddress.slice(2, 10), 16);

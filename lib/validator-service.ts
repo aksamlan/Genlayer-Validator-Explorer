@@ -3,6 +3,7 @@ import { ValidatorInfo, EpochInfo, NetworkStats } from '@/types/validator';
 import { truncateAddress } from './utils';
 import {
     getActiveValidatorAddresses,
+    getAllValidatorAddresses,
     getValidatorContractInfo,
     getEpochNumber,
     getValidatorMinStake,
@@ -28,21 +29,29 @@ export class ValidatorService {
             const validators = await getActiveValidatorAddresses(network);
             console.log(`[ValidatorService] Found ${validators.length} active validators on ${network.name}`);
 
-            if (validators.length === 0) {
-                console.warn(`[ValidatorService] No validators returned from ${network.name}`);
-            }
-
             return validators;
         } catch (error: any) {
             console.error(`[ValidatorService] Error fetching active validators on ${network.name}:`, error.message);
-            console.error(`[ValidatorService] Full error:`, error);
             return [];
         }
     }
 
-    async getValidatorInfo(address: Address, network: NetworkConfig = DEFAULT_NETWORK): Promise<ValidatorInfo> {
+    async getAllValidators(network: NetworkConfig = DEFAULT_NETWORK): Promise<Address[]> {
         try {
-            const contractInfo = await getValidatorContractInfo(address, network);
+            console.log(`[ValidatorService] Discovering all validators for ${network.name}...`);
+            const validators = await getAllValidatorAddresses(network);
+            console.log(`[ValidatorService] Discovered ${validators.length} total validators on ${network.name}`);
+
+            return validators;
+        } catch (error: any) {
+            console.error(`[ValidatorService] Error discovering validators on ${network.name}:`, error.message);
+            return [];
+        }
+    }
+
+    async getValidatorInfo(address: Address, network: NetworkConfig = DEFAULT_NETWORK, activeAddresses?: Address[]): Promise<ValidatorInfo> {
+        try {
+            const contractInfo = await getValidatorContractInfo(address, network, activeAddresses);
 
             return {
                 moniker: contractInfo.moniker || truncateAddress(address),
@@ -92,24 +101,25 @@ export class ValidatorService {
         try {
             console.log(`[ValidatorService] Fetching epoch info for ${network.name}...`);
 
-            const [currentEpoch, minStake, validators] = await Promise.all([
+            const [currentEpoch, minStake, activeAddresses, allAddresses] = await Promise.all([
                 getEpochNumber(network),
                 getValidatorMinStake(network),
-                this.getActiveValidators(network)
+                this.getActiveValidators(network),
+                this.getAllValidators(network)
             ]);
 
             const validatorInfos = await Promise.all(
-                validators.map(addr => this.getValidatorInfo(addr, network))
+                allAddresses.map(addr => this.getValidatorInfo(addr, network, activeAddresses))
             );
 
             const activeCount = validatorInfos.filter(v => v.isActive).length;
             const bannedCount = validatorInfos.filter(v => v.isBanned).length;
 
-            console.log(`[ValidatorService] Epoch: ${currentEpoch}, Active Count: ${activeCount}, Total: ${validators.length}`);
+            console.log(`[ValidatorService] Epoch: ${currentEpoch}, Active: ${activeCount}, Total Knowledge: ${allAddresses.length}`);
 
             return {
                 currentEpoch: Number(currentEpoch),
-                totalValidators: validators.length,
+                totalValidators: allAddresses.length,
                 activeValidators: activeCount,
                 bannedValidators: bannedCount,
                 inflation: '0',
@@ -132,10 +142,15 @@ export class ValidatorService {
 
     async getNetworkStats(network: NetworkConfig = DEFAULT_NETWORK): Promise<NetworkStats> {
         try {
-            const validators = await this.getActiveValidators(network);
+            const [activeAddresses, allAddresses] = await Promise.all([
+                this.getActiveValidators(network),
+                this.getAllValidators(network)
+            ]);
+
             const validatorInfos = await Promise.all(
-                validators.map(addr => this.getValidatorInfo(addr, network))
+                allAddresses.map(addr => this.getValidatorInfo(addr, network, activeAddresses))
             );
+
             const epochInfo = await this.getEpochInfo(network);
 
             return {

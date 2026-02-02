@@ -70,7 +70,7 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
             <CardHeader className="bg-white/[0.02] border-b border-white/5 py-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <CardTitle className="text-lg font-bold tracking-tight">Active Validator Registry</CardTitle>
+                        <CardTitle className="text-lg font-bold tracking-tight">Staking Registry</CardTitle>
                         <p className="text-xs text-muted-foreground mt-0.5">
                             {filteredValidators.length} of {validators.length} validators
                         </p>
