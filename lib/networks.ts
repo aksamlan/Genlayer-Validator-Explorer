@@ -18,13 +18,13 @@ export const ASIMOV_NETWORK: NetworkConfig = {
         ...testnetAsimov,
         stakingContract: {
             ...testnetAsimov.stakingContract,
-            address: "0x03f410748EBdb4026a6b8299E9B6603A273709D1",
+            address: "0xe66B434bc83805f380509642429eC8e43AE9874a",
         },
         consensusMain: {
-            address: "0x67fd4aC71530FB220E0B7F90668BAF977B88fF07",
+            address: "0xe66B434bc83805f380509642429eC8e43AE9874a",
         },
         consensusData: {
-            address: "0xB6E1316E57d47d82FDcEa5002028a554754EF243",
+            address: "0xe66B434bc83805f380509642429eC8e43AE9874a",
         }
     }
 };
