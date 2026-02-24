@@ -12,7 +12,7 @@ export interface NetworkConfig {
 export const ASIMOV_NETWORK: NetworkConfig = {
     id: 'asimov',
     name: 'Asimov',
-    rpcUrl: 'https://genlayer-testnet.rpc.caldera.xyz/http',
+    rpcUrl: 'https://zksync-os-testnet-genlayer.zksync.dev',
     tokenSymbol: 'GEN',
     chainConfig: {
         ...testnetAsimov,
