@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { testnetAsimov } from "genlayer-js/chains";
 import { GENLAYER_CONFIG } from "@/config/genlayer";
+=======
+import { Address } from "genlayer-js/types";
+import { testnetAsimov, studionet } from "genlayer-js/chains";
+>>>>>>> a4943ccea23d73a81043e6f20ec0b40fea1eb486
 
 export interface NetworkConfig {
     id: string;
@@ -9,6 +14,7 @@ export interface NetworkConfig {
     chainConfig: any;
 }
 
+<<<<<<< HEAD
 const ASIMOV_CONFIG = GENLAYER_CONFIG.asimov;
 
 // RPC önceliğini buradan yönetebilirsin:
@@ -22,11 +28,18 @@ export const ASIMOV_NETWORK: NetworkConfig = {
     id: 'asimov',
     name: 'Asimov',
     rpcUrl: ASIMOV_RPC_URL,
+=======
+export const ASIMOV_NETWORK: NetworkConfig = {
+    id: 'asimov',
+    name: 'Asimov',
+    rpcUrl: 'https://zksync-os-testnet-genlayer.zksync.dev',
+>>>>>>> a4943ccea23d73a81043e6f20ec0b40fea1eb486
     tokenSymbol: 'GEN',
     chainConfig: {
         ...testnetAsimov,
         stakingContract: {
             ...testnetAsimov.stakingContract,
+<<<<<<< HEAD
             address: ASIMOV_CONFIG.stakingContractAddress,
         },
         consensusMain: {
@@ -34,6 +47,15 @@ export const ASIMOV_NETWORK: NetworkConfig = {
         },
         consensusData: {
             address: ASIMOV_CONFIG.consensusAddress,
+=======
+            address: "0xe66B434bc83805f380509642429eC8e43AE9874a",
+        },
+        consensusMain: {
+            address: "0xe66B434bc83805f380509642429eC8e43AE9874a",
+        },
+        consensusData: {
+            address: "0xe66B434bc83805f380509642429eC8e43AE9874a",
+>>>>>>> a4943ccea23d73a81043e6f20ec0b40fea1eb486
         }
     }
 };
