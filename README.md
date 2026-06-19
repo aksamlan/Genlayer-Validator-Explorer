@@ -2,7 +2,7 @@
 
 ![GenLayer Explorer Screenshot](public/logo.jpg)
 
-A comprehensive, real-time blockchain explorer for the **GenLayer Rally / Asimov Testnet** — blocks, transactions, validators, addresses, and AI-augmented intelligent contracts in one place.
+A comprehensive, real-time blockchain explorer for the **GenLayer Rally / Asimov Testnet** — blocks, transactions, validators, and addresses in one place.
 
 ## 🚀 Features
 
@@ -16,11 +16,6 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Rally / Asimov
 *   **Validator registry** (`/validators`) with search, filtering, and per-validator drilldown.
 *   **Validator profile pages** (`/validator/[address]`) — identity card, stake breakdown, pending ops, on-chain details.
 *   **"My Node" highlight** — set `NEXT_PUBLIC_OWNER_VALIDATOR` to feature your own validator on the dashboard with a crown badge.
-
-### Intelligent Contracts (GenVM)
-*   **Contracts registry** (`/contracts`) — curated list of intelligent contracts on the Rally testnet.
-*   **Contract detail pages** (`/contract/[address]`) — schema, methods, state fields fetched via `gen_getContractSchema`.
-*   **GenVM explainer** describing GenLayer's optimistic-democracy consensus over LLM-augmented contracts.
 
 ### Live Metrics
 *   **Gas price tracker** with sparkline (`recharts`).
@@ -69,9 +64,6 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Rally / Asimov
 
     # Optional: highlight your own validator on the dashboard
     NEXT_PUBLIC_OWNER_VALIDATOR=0xYourValidatorAddress
-
-    # Optional: curated AI contracts for the /contracts page
-    NEXT_PUBLIC_KNOWN_CONTRACTS=0xaddr:Name, 0xaddr:Name
     ```
 
 4.  Run the development server:

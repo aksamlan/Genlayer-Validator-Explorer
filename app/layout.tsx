@@ -18,9 +18,9 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "GenLayer Explorer | Blocks · Transactions · Validators · AI Contracts",
+    title: "GenLayer Explorer | Blocks · Transactions · Validators",
     description:
-        "Real-time blockchain explorer for the GenLayer Asimov / Rally Testnet — transactions, blocks, validators, AI-augmented intelligent contracts, and live network statistics.",
+        "Real-time blockchain explorer for the GenLayer Asimov / Rally Testnet — transactions, blocks, validators, and live network statistics.",
     icons: { icon: '/logo.jpg' },
     openGraph: {
         title: "GenLayer Explorer",
