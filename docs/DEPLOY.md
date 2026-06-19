@@ -29,7 +29,6 @@ In the Vercel project's **Settings → Environment Variables**, add:
 | `NEXT_PUBLIC_GENLAYER_RPC_URL` | `https://rally-testnet.genlayer.com/api` | Rally testnet JSON-RPC |
 | `NEXT_PUBLIC_EVM_RPC_URL` | `https://zksync-os-testnet-genlayer.zksync.dev` | Staking layer (ZKSync OS) |
 | `NEXT_PUBLIC_OWNER_VALIDATOR` | `0xYourValidatorAddress` | Optional — enables My Node card |
-| `NEXT_PUBLIC_KNOWN_CONTRACTS` | `0xaddr:Name, 0xaddr:Name` | Optional — curated AI contracts list (unused right now) |
 
 Apply each variable to the **Production**, **Preview**, and **Development** environments.
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Box, Activity, Users, Shield } from 'lucide-react';
+import { Box, Activity, Shield } from 'lucide-react';
 import { getLatestBlockNumber } from '@/lib/explorer-rpc';
 import { fmtNumber } from '@/lib/format';
 import type { EpochInfo } from '@/types/validator';
@@ -59,14 +59,13 @@ export function HeroBanner({ chainId, epochInfo, blockNumber }: HeroBannerProps)
                     </h1>
 
                     <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                        Real-time block, transaction, validator, and intelligent-contract explorer for the chain that puts <span className="text-foreground font-bold">AI into smart contracts</span>.
+                        Real-time block, transaction, and validator explorer for the <span className="text-foreground font-bold">GenLayer Asimov / Rally Testnet</span>.
                     </p>
 
                     <div className="flex flex-wrap gap-2.5 pt-1">
                         <HeroChip icon={Box} label="Blocks" href="/blocks" />
                         <HeroChip icon={Activity} label="Transactions" href="/txs" />
                         <HeroChip icon={Shield} label="Validators" href="/validators" />
-                        <HeroChip icon={Users} label="AI Contracts" href="/contracts" />
                     </div>
                 </div>
 
