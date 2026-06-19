@@ -4,26 +4,38 @@
 
 @layer base {
   :root {
-    --background: 230 25% 4%;
-    --foreground: 210 40% 98%;
-    --card: 230 25% 6%;
-    --card-foreground: 210 40% 98%;
-    --popover: 230 25% 6%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 165 90% 45%;
-    --primary-foreground: 165 10% 2%;
-    --secondary: 220 20% 12%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 20% 12%;
-    --muted-foreground: 215 15% 65%;
-    --accent: 185 80% 50%;
-    --accent-foreground: 185 10% 5%;
-    --destructive: 0 84% 60%;
+    /* Premium dark palette — warm midnight base, refined emerald + cyan accents */
+    --background: 224 35% 7%;
+    --foreground: 210 30% 96%;
+    --card: 224 30% 11%;
+    --card-foreground: 210 30% 96%;
+    --popover: 224 30% 11%;
+    --popover-foreground: 210 30% 96%;
+
+    /* Primary — refined emerald, less neon, more confident */
+    --primary: 162 72% 52%;
+    --primary-foreground: 162 35% 6%;
+
+    --secondary: 224 25% 16%;
+    --secondary-foreground: 210 30% 96%;
+
+    --muted: 224 22% 18%;
+    --muted-foreground: 215 16% 78%;
+
+    /* Accent — softer cyan with a hint of violet warmth */
+    --accent: 186 78% 62%;
+    --accent-foreground: 186 30% 8%;
+
+    --destructive: 0 72% 64%;
     --destructive-foreground: 210 40% 98%;
-    --border: 220 20% 15%;
-    --input: 220 20% 15%;
-    --ring: 165 90% 45%;
-    --radius: 1rem;
+
+    --border: 224 20% 24%;
+    --input: 224 20% 24%;
+    --ring: 162 72% 52%;
+    --radius: 1.1rem;
+
+    /* New: violet accent for hero gradients */
+    --violet: 270 72% 68%;
   }
 }
 
@@ -32,54 +44,126 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
   }
-
-  *::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
   *::-webkit-scrollbar-thumb {
     background-color: hsl(var(--border));
     border-radius: 999px;
   }
-
   *::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(var(--muted-foreground) / 0.4);
-  }
-}
-
-@layer utilities {
-  .glass {
-    @apply bg-card/60 backdrop-blur-xl border border-white/5;
+    background-color: hsl(var(--muted-foreground) / 0.5);
   }
 
-  .glass-hover {
-    @apply hover:bg-card/80 transition-all duration-300;
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
-  }
-
-  .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-}
-
-@layer base {
   * {
     @apply border-border selection:bg-primary/30 selection:text-foreground;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    background-image:
-      radial-gradient(circle at 0% 0%, hsla(165, 90%, 45%, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, hsla(185, 80%, 50%, 0.05) 0%, transparent 50%);
+    @apply bg-background text-foreground antialiased bg-aurora;
     background-attachment: fixed;
+    font-feature-settings: "cv11", "ss03", "cv01";
+    line-height: 1.6;
+    letter-spacing: -0.005em;
   }
+
+  /* Hero & headings get a touch wider letter-spacing for confidence */
+  h1, h2 { letter-spacing: -0.03em; }
+}
+
+@layer utilities {
+  /* Lifted, airier glass — surfaces feel above the page */
+  .glass {
+    @apply bg-card/65 backdrop-blur-xl border border-white/10;
+  }
+  .glass-hover {
+    @apply hover:bg-card/80 hover:border-white/15 transition-all duration-300;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+  }
+  .text-gradient-warm {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 50%, hsl(var(--violet)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .animate-pulse-slow { animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+  /* Aurora backdrop — soft, breathing radial gradients */
+  .bg-aurora {
+    background-image:
+      radial-gradient(900px 600px at 8% -10%, hsla(162, 72%, 52%, 0.10) 0%, transparent 60%),
+      radial-gradient(700px 500px at 92% 0%, hsla(186, 78%, 62%, 0.10) 0%, transparent 60%),
+      radial-gradient(800px 600px at 50% 120%, hsla(270, 72%, 68%, 0.06) 0%, transparent 60%);
+  }
+
+  /* Page-entry fade + lift */
+  .page-enter {
+    animation: page-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Staggered child reveal */
+  .stagger-children > * {
+    animation: page-enter 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 30ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 130ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 230ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 280ms; }
+
+  /* Card hover lift (used on .card-lift) */
+  .card-lift {
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms;
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px -18px hsla(162, 72%, 52%, 0.35);
+  }
+
+  /* Hero animated gradient */
+  .hero-band {
+    background:
+      radial-gradient(70% 140% at 0% 0%, hsla(162, 72%, 52%, 0.18) 0%, transparent 60%),
+      radial-gradient(60% 140% at 100% 100%, hsla(186, 78%, 62%, 0.18) 0%, transparent 60%),
+      radial-gradient(80% 140% at 50% 100%, hsla(270, 72%, 68%, 0.12) 0%, transparent 60%),
+      hsl(var(--card) / 0.55);
+    background-size: 200% 200%;
+    animation: hero-shift 18s ease-in-out infinite alternate;
+  }
+  @keyframes hero-shift {
+    0%   { background-position: 0% 0%, 100% 100%, 50% 100%; }
+    100% { background-position: 30% 20%, 70% 80%, 60% 70%; }
+  }
+
+  /* Soft grid overlay for hero */
+  .grid-overlay {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, black 35%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 75%);
+  }
+
+  /* Underline draw on hover */
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .link-underline:hover::after { transform: scaleX(1); }
 }

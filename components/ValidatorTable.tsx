@@ -13,10 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ValidatorInfo } from "@/types/validator";
 import { truncateAddress, cn, formatNumber } from "@/lib/utils";
+import { isOwnerValidator } from "@/lib/my-node";
+import { useToast } from "@/components/Toaster";
 import {
     Copy, Users, ChevronDown, ChevronUp, ShieldAlert, Layers,
-    ChevronLeft, ChevronRight, Globe, ArrowDownToLine, ArrowUpFromLine
+    ChevronLeft, ChevronRight, Globe, ArrowDownToLine, ArrowUpFromLine, Crown, ArrowRight,
+    Twitter, Github, Send, Mail, User as UserIcon
 } from "lucide-react";
+import Link from "next/link";
 import React, { useState, useMemo } from "react";
 
 interface ValidatorTableProps {
@@ -38,18 +42,17 @@ function getStatus(v: ValidatorInfo): 'active' | 'banned' | 'inactive' {
 }
 
 export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: ValidatorTableProps) {
-    const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedValidator, setExpandedValidator] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+    const toast = useToast();
 
     const copyToClipboard = async (address: string, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
             await navigator.clipboard.writeText(address);
-            setCopiedAddress(address);
-            setTimeout(() => setCopiedAddress(null), 2000);
+            toast.push({ kind: 'success', title: 'Address copied', description: truncateAddress(address) });
         } catch { /* ignore */ }
     };
 
@@ -66,6 +69,18 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
         [...validators].sort((a, b) => STATUS_ORDER[getStatus(a)] - STATUS_ORDER[getStatus(b)]),
         [validators]
     );
+
+    // Stake rank lookup (over active validators only, descending by stake)
+    const { stakeRank, totalActiveStake } = useMemo(() => {
+        const active = validators
+            .filter(v => v.isActive && !v.isBanned)
+            .map(v => ({ addr: v.address.toLowerCase(), stake: BigInt(v.stake) }))
+            .sort((a, b) => (b.stake > a.stake ? 1 : b.stake < a.stake ? -1 : 0));
+        const rank: Record<string, number> = {};
+        active.forEach((v, i) => { rank[v.addr] = i + 1; });
+        const total = active.reduce((acc, v) => acc + v.stake, 0n);
+        return { stakeRank: rank, totalActiveStake: total };
+    }, [validators]);
 
     const filtered = useMemo(() => {
         let list = sorted;
@@ -172,8 +187,8 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                 <TableHead className="w-8 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60 py-4 pl-4">#</TableHead>
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Validator</TableHead>
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Address</TableHead>
+                                <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Rank</TableHead>
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Total Stake</TableHead>
-                                <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Delegated</TableHead>
                                 <TableHead className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/80">Status</TableHead>
                                 <TableHead className="w-8" />
                             </TableRow>
@@ -212,6 +227,7 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                     "border-white/5 group transition-all duration-200 cursor-pointer",
                                                     pageIdx % 2 === 0 ? "bg-white/[0.02]" : "bg-transparent",
                                                     "hover:bg-white/[0.05]",
+                                                    isOwnerValidator(validator.address) && "bg-primary/5 hover:bg-primary/10",
                                                     isExpanded && "bg-white/[0.07] border-l-2",
                                                     isExpanded && status === 'active' && "border-l-primary/50",
                                                     isExpanded && status === 'banned' && "border-l-destructive/50",
@@ -245,14 +261,61 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                             )} />
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <p className="text-sm font-bold truncate max-w-[140px] group-hover:text-primary transition-colors">
-                                                                {validator.moniker || truncateAddress(validator.address)}
-                                                            </p>
-                                                            {validator.identity && (
-                                                                <p className="text-[10px] text-muted-foreground truncate max-w-[130px]">
-                                                                    {validator.identity.replace(/^https?:\/\//, '')}
+                                                            <div className="flex items-center gap-1.5">
+                                                                <p className="text-sm font-bold truncate max-w-[180px] group-hover:text-primary transition-colors">
+                                                                    {validator.moniker || truncateAddress(validator.address)}
                                                                 </p>
-                                                            )}
+                                                                {isOwnerValidator(validator.address) && (
+                                                                    <Crown className="h-3 w-3 text-accent flex-shrink-0" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                {validator.identity && (
+                                                                    <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                                                                        {validator.identity.replace(/^https?:\/\//, '')}
+                                                                    </p>
+                                                                )}
+                                                                <div className="flex items-center gap-0.5">
+                                                                    {validator.twitter && (
+                                                                        <a
+                                                                            href={validator.twitter.startsWith('http') ? validator.twitter : `https://twitter.com/${validator.twitter.replace(/^@/, '')}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            onClick={e => e.stopPropagation()}
+                                                                            className="p-0.5 text-muted-foreground/60 hover:text-primary transition-colors"
+                                                                            title={validator.twitter}
+                                                                        ><Twitter className="h-2.5 w-2.5" /></a>
+                                                                    )}
+                                                                    {validator.github && (
+                                                                        <a
+                                                                            href={validator.github.startsWith('http') ? validator.github : `https://github.com/${validator.github}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            onClick={e => e.stopPropagation()}
+                                                                            className="p-0.5 text-muted-foreground/60 hover:text-primary transition-colors"
+                                                                            title={validator.github}
+                                                                        ><Github className="h-2.5 w-2.5" /></a>
+                                                                    )}
+                                                                    {validator.telegram && (
+                                                                        <a
+                                                                            href={validator.telegram.startsWith('http') ? validator.telegram : `https://t.me/${validator.telegram.replace(/^@/, '')}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            onClick={e => e.stopPropagation()}
+                                                                            className="p-0.5 text-muted-foreground/60 hover:text-primary transition-colors"
+                                                                            title={validator.telegram}
+                                                                        ><Send className="h-2.5 w-2.5" /></a>
+                                                                    )}
+                                                                    {validator.email && (
+                                                                        <a
+                                                                            href={`mailto:${validator.email}`}
+                                                                            onClick={e => e.stopPropagation()}
+                                                                            className="p-0.5 text-muted-foreground/60 hover:text-primary transition-colors"
+                                                                            title={validator.email}
+                                                                        ><Mail className="h-2.5 w-2.5" /></a>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </TableCell>
@@ -268,22 +331,50 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                         >
                                                             <Copy className="h-3 w-3 group-hover/cp:scale-110 transition-transform" />
                                                         </button>
-                                                        {copiedAddress === validator.address && (
-                                                            <span className="text-[9px] text-primary font-black animate-in fade-in">✓</span>
-                                                        )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <span className="text-xs font-black">
-                                                        {formatNumber(Number(totalStakeGEN))}
-                                                        <span className="text-[9px] text-muted-foreground font-bold ml-1">{tokenSymbol}</span>
-                                                    </span>
+                                                    {(() => {
+                                                        const rank = stakeRank[validator.address.toLowerCase()];
+                                                        if (!rank) return <span className="text-[10px] text-muted-foreground/40">—</span>;
+                                                        return (
+                                                            <span className={cn(
+                                                                "inline-flex items-center justify-center min-w-[30px] h-6 rounded-md text-[10px] font-black font-mono px-1.5",
+                                                                rank === 1 && "bg-yellow-500/15 text-yellow-500 border border-yellow-500/30",
+                                                                rank === 2 && "bg-zinc-300/10 text-zinc-200 border border-zinc-300/20",
+                                                                rank === 3 && "bg-amber-700/15 text-amber-500 border border-amber-700/30",
+                                                                rank > 3 && "bg-white/5 text-muted-foreground border border-white/10",
+                                                            )}>
+                                                                #{rank}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <span className="text-xs font-black">
-                                                        {formatNumber(Number(delegatedGEN))}
-                                                        <span className="text-[9px] text-muted-foreground font-bold ml-1">{tokenSymbol}</span>
-                                                    </span>
+                                                    <div>
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className="text-xs font-black">
+                                                                {formatNumber(Number(totalStakeGEN))}
+                                                            </span>
+                                                            <span className="text-[9px] text-muted-foreground font-bold">{tokenSymbol}</span>
+                                                        </div>
+                                                        {totalActiveStake > 0n && validator.isActive && !validator.isBanned && (() => {
+                                                            const share = Number((BigInt(validator.stake) * 10000n) / totalActiveStake) / 100;
+                                                            return (
+                                                                <div className="flex items-center gap-1.5 mt-1">
+                                                                    <div className="w-14 h-1 rounded-full bg-white/5 overflow-hidden">
+                                                                        <div
+                                                                            className="h-full bg-primary/60"
+                                                                            style={{ width: `${Math.min(100, share * 4)}%` }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-[9px] text-muted-foreground/70 font-mono">
+                                                                        {share.toFixed(2)}%
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     {status === 'banned' ? (
@@ -392,6 +483,58 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                                     {!validator.identity && !validator.moniker && (
                                                                         <p className="text-[10px] text-muted-foreground/40 italic">No identity registered</p>
                                                                     )}
+
+                                                                    {/* Socials */}
+                                                                    {(validator.twitter || validator.github || validator.telegram || validator.email) && (
+                                                                        <div className="flex flex-wrap gap-1 pt-1">
+                                                                            {validator.twitter && (
+                                                                                <a
+                                                                                    href={validator.twitter.startsWith('http') ? validator.twitter : `https://twitter.com/${validator.twitter.replace(/^@/, '')}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                    className="p-1 rounded-md bg-white/5 hover:bg-primary/15 hover:text-primary transition-colors"
+                                                                                    title="Twitter"
+                                                                                ><Twitter className="h-2.5 w-2.5" /></a>
+                                                                            )}
+                                                                            {validator.github && (
+                                                                                <a
+                                                                                    href={validator.github.startsWith('http') ? validator.github : `https://github.com/${validator.github}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                    className="p-1 rounded-md bg-white/5 hover:bg-primary/15 hover:text-primary transition-colors"
+                                                                                    title="GitHub"
+                                                                                ><Github className="h-2.5 w-2.5" /></a>
+                                                                            )}
+                                                                            {validator.telegram && (
+                                                                                <a
+                                                                                    href={validator.telegram.startsWith('http') ? validator.telegram : `https://t.me/${validator.telegram.replace(/^@/, '')}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                    className="p-1 rounded-md bg-white/5 hover:bg-primary/15 hover:text-primary transition-colors"
+                                                                                    title="Telegram"
+                                                                                ><Send className="h-2.5 w-2.5" /></a>
+                                                                            )}
+                                                                            {validator.email && (
+                                                                                <a
+                                                                                    href={`mailto:${validator.email}`}
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                    className="p-1 rounded-md bg-white/5 hover:bg-primary/15 hover:text-primary transition-colors"
+                                                                                    title="Email"
+                                                                                ><Mail className="h-2.5 w-2.5" /></a>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
+                                                                    <Link
+                                                                        href={`/validator/${validator.address}`}
+                                                                        onClick={e => e.stopPropagation()}
+                                                                        className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary hover:gap-2 transition-all"
+                                                                    >
+                                                                        Full Profile <ArrowRight className="h-2.5 w-2.5" />
+                                                                    </Link>
                                                                 </div>
                                                             </div>
                                                         </div>

@@ -1,17 +1,42 @@
 export interface ValidatorInfo {
     address: string;
     moniker: string;
-    identity: string;
+    identity: string;     // website (kept for backwards compat)
     logoUri?: string;
+
+    // Status
     isActive: boolean;
     isBanned: boolean;
+    bannedEpoch?: string;
+    primedEpoch?: string;
+
+    // Stake
     stake: string;
     selfStake: string;
     delegatedStake: string;
     commission: string;
     shares: string;
+    delegatedShares?: string;
     pendingDeposits: string;
     pendingWithdrawals: string;
+
+    // Profile / socials
+    description?: string;
+    email?: string;
+    twitter?: string;
+    telegram?: string;
+    github?: string;
+
+    // On-chain roles
+    operator?: string;
+    owner?: string;
+
+    // Tree position (staking BST)
+    leftNode?: string;
+    rightNode?: string;
+    parentNode?: string;
+
+    // Performance (reserved for future)
     uptime: number;
     missedBlocks: number;
     blocksProduced: number;
