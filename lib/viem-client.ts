@@ -140,11 +140,24 @@ export interface ValidatorContractInfo {
     shares: bigint;
     deposit: bigint;
     withdrawal: bigint;
+    delegatedShares: bigint;
     live: boolean;
     banned: boolean;
+    bannedEpoch: bigint;
+    primedEpoch: bigint;
     moniker: string;
     website: string;
     logoUri: string;
+    description: string;
+    email: string;
+    twitter: string;
+    telegram: string;
+    github: string;
+    operator: string;
+    owner: string;
+    leftNode: string;
+    rightNode: string;
+    parentNode: string;
     uptime: number;
     missedBlocks: number;
     blocksProduced: number;
@@ -205,27 +218,40 @@ export async function getValidatorContractInfo(
             console.warn(`[Viem] validatorView failed for ${validatorAddress}:`, e);
         }
 
-        // Read identity from validator wallet contract
-        let identity: any = null;
-        try {
-            identity = await client.readContract({
+        // Read identity + operator + owner from validator wallet contract in parallel
+        const [identityRes, operatorRes, ownerRes] = await Promise.allSettled([
+            client.readContract({
                 address: validatorAddress,
                 abi: VALIDATOR_WALLET_ABI,
                 functionName: 'getIdentity',
-            });
-        } catch (e) {
-            // Many wallets may not have identity set - this is expected
-        }
+            }),
+            client.readContract({
+                address: validatorAddress,
+                abi: VALIDATOR_WALLET_ABI,
+                functionName: 'operator',
+            }),
+            client.readContract({
+                address: validatorAddress,
+                abi: VALIDATOR_WALLET_ABI,
+                functionName: 'owner',
+            }),
+        ]);
+        const identity: any = identityRes.status === 'fulfilled' ? identityRes.value : null;
+        const operator = operatorRes.status === 'fulfilled' ? String(operatorRes.value).toLowerCase() : '';
+        const owner = ownerRes.status === 'fulfilled' ? String(ownerRes.value).toLowerCase() : '';
 
         const stake = view ? BigInt(view.vStake ?? 0) : 0n;
         const delegatedStake = view ? BigInt(view.dStake ?? 0) : 0n;
         const shares = view ? BigInt(view.vShares ?? 0) : 0n;
+        const delegatedShares = view ? BigInt(view.dShares ?? 0) : 0n;
         const deposit = view ? BigInt(view.vDeposit ?? 0) : 0n;
         const withdrawal = view ? BigInt(view.vWithdrawal ?? 0) : 0n;
+        const bannedEpoch = view ? BigInt(view.eBanned ?? 0) : 0n;
+        const primedEpoch = view ? BigInt(view.ePrimed ?? 0) : 0n;
         // isActive comes from activeValidators() — the authoritative source for active status.
         // view.live is a separate contract flag and does NOT reliably reflect active set membership.
         const live = isActive;
-        const banned = view ? BigInt(view.eBanned ?? 0) > 0n : false;
+        const banned = bannedEpoch > 0n;
 
         return {
             stake,
@@ -233,13 +259,26 @@ export async function getValidatorContractInfo(
             delegatedStake,
             commission: 0,
             shares,
+            delegatedShares,
             deposit,
             withdrawal,
             live,
             banned,
+            bannedEpoch,
+            primedEpoch,
             moniker: identity?.moniker || '',
             website: identity?.website || '',
             logoUri: identity?.logoUri || '',
+            description: identity?.description || '',
+            email: identity?.email || '',
+            twitter: identity?.twitter || '',
+            telegram: identity?.telegram || '',
+            github: identity?.github || '',
+            operator,
+            owner,
+            leftNode: view ? String(view.left).toLowerCase() : '',
+            rightNode: view ? String(view.right).toLowerCase() : '',
+            parentNode: view ? String(view.parent).toLowerCase() : '',
             uptime: 0,
             missedBlocks: 0,
             blocksProduced: 0,
@@ -254,13 +293,26 @@ export async function getValidatorContractInfo(
             delegatedStake: 0n,
             commission: 0,
             shares: 0n,
+            delegatedShares: 0n,
             deposit: 0n,
             withdrawal: 0n,
             live: false,
             banned: false,
+            bannedEpoch: 0n,
+            primedEpoch: 0n,
             moniker: '',
             website: '',
             logoUri: '',
+            description: '',
+            email: '',
+            twitter: '',
+            telegram: '',
+            github: '',
+            operator: '',
+            owner: '',
+            leftNode: '',
+            rightNode: '',
+            parentNode: '',
             uptime: 0,
             missedBlocks: 0,
             blocksProduced: 0,
