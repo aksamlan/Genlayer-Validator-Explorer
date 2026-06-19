@@ -81,6 +81,13 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Rally / Asimov
 
 5.  Open [http://localhost:3000](http://localhost:3000) with your browser.
 
+## 📚 Operator Guides
+
+If you run a validator and want the most out of the explorer:
+
+- **[Set your on-chain identity](./docs/SET_IDENTITY.md)** — moniker, logo, website, twitter, github, telegram, email. Once set, the explorer surfaces them in the registry table, hero, and validator profile automatically. Three methods: GenLayer CLI, Foundry `cast`, or viem script.
+- **[Deploy the explorer](./docs/DEPLOY.md)** — Vercel (recommended), Docker, or Cloudflare Pages. Includes env-var checklist and custom-domain steps.
+
 ## 📂 Project Structure
 
 ```
