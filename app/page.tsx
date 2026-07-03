@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { validatorService } from '@/lib/validator-service';
-import { DEFAULT_NETWORK, NetworkConfig } from '@/lib/networks';
+import { NetworkConfig } from '@/lib/networks';
+import { useNetwork } from '@/lib/network-context';
 import type { NetworkStats } from '@/types/validator';
 import { getOwnerValidatorAddress } from '@/lib/my-node';
 import { getLatestBlockNumber } from '@/lib/explorer-rpc';
@@ -30,8 +31,8 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [blockNumber, setBlockNumber] = useState<string>('0');
-    const [currentNetwork] = useState<NetworkConfig>(DEFAULT_NETWORK);
-    const owner = getOwnerValidatorAddress();
+    const { network: currentNetwork } = useNetwork();
+    const owner = getOwnerValidatorAddress(currentNetwork.id);
 
     const fetchData = async (network: NetworkConfig = currentNetwork) => {
         try {
@@ -53,10 +54,11 @@ export default function Home() {
     };
 
     useEffect(() => {
-        fetchData();
-        const id = setInterval(() => fetchData(), POLLING_INTERVAL);
+        fetchData(currentNetwork);
+        const id = setInterval(() => fetchData(currentNetwork), POLLING_INTERVAL);
         return () => clearInterval(id);
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentNetwork.id]);
 
     return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-10 sm:py-14 space-y-14">
@@ -64,7 +66,6 @@ export default function Home() {
             {/* Hero */}
             <section className="space-y-6">
                 <HeroBanner
-                    chainId={currentNetwork.displayChainId}
                     epochInfo={networkStats?.epochInfo ?? null}
                     blockNumber={blockNumber}
                 />

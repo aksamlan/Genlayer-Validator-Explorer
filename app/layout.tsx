@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ToasterProvider } from "@/components/Toaster";
+import { NetworkProvider } from "@/lib/network-context";
 
 const inter = Inter({
     subsets: ["latin"],
@@ -20,7 +21,7 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
     title: "GenLayer Explorer | Blocks · Transactions · Validators",
     description:
-        "Real-time blockchain explorer for the GenLayer Asimov / Rally Testnet — transactions, blocks, validators, and live network statistics.",
+        "Real-time blockchain explorer for the GenLayer Asimov and Bradbury testnets — transactions, blocks, validators, and live network statistics.",
     icons: { icon: '/logo.jpg' },
     openGraph: {
         title: "GenLayer Explorer",
@@ -37,11 +38,13 @@ export default function RootLayout({
     return (
         <html lang="en" className={`dark ${inter.variable} ${jetBrainsMono.variable}`}>
             <body className={`${inter.className} min-h-screen flex flex-col font-sans`}>
-                <ToasterProvider>
-                    <Header />
-                    <div className="flex-1 page-enter">{children}</div>
-                    <Footer />
-                </ToasterProvider>
+                <NetworkProvider>
+                    <ToasterProvider>
+                        <Header />
+                        <div className="flex-1 page-enter">{children}</div>
+                        <Footer />
+                    </ToasterProvider>
+                </NetworkProvider>
             </body>
         </html>
     );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { validatorService } from '@/lib/validator-service';
-import { DEFAULT_NETWORK } from '@/lib/networks';
+import { useNetwork } from '@/lib/network-context';
 import type { NetworkStats } from '@/types/validator';
 import { ValidatorTable } from '@/components/ValidatorTable';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -11,16 +11,18 @@ import { HeroStats } from '@/components/widgets/HeroStats';
 import { getLatestBlockNumber } from '@/lib/explorer-rpc';
 
 export default function ValidatorsPage() {
+    const { network } = useNetwork();
     const [stats, setStats] = useState<NetworkStats | null>(null);
     const [blockNumber, setBlockNumber] = useState<string>('0');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
+        setLoading(true);
         const tick = async () => {
             try {
                 const [s, b] = await Promise.all([
-                    validatorService.getNetworkStats(DEFAULT_NETWORK),
+                    validatorService.getNetworkStats(network),
                     getLatestBlockNumber().catch(() => null),
                 ]);
                 if (cancelled) return;
@@ -35,7 +37,8 @@ export default function ValidatorsPage() {
         tick();
         const id = setInterval(tick, 30_000);
         return () => { cancelled = true; clearInterval(id); };
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [network.id]);
 
     return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">

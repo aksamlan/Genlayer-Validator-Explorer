@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from '@/components/SectionHeader';
 import { validatorService } from '@/lib/validator-service';
-import { DEFAULT_NETWORK } from '@/lib/networks';
+import { useNetwork } from '@/lib/network-context';
 import { getAddressBalance, getAddressTxCount } from '@/lib/explorer-rpc';
 import { isOwnerValidator } from '@/lib/my-node';
 import { useToast } from '@/components/Toaster';
@@ -28,6 +28,7 @@ export default function ValidatorDetailPage() {
     const params = useParams<{ address: string }>();
     const addr = params?.address?.toLowerCase() as Address | undefined;
     const toast = useToast();
+    const { network } = useNetwork();
 
     const [validator, setValidator] = useState<ValidatorInfo | null>(null);
     const [balance, setBalance] = useState<bigint | null>(null);
@@ -41,7 +42,7 @@ export default function ValidatorDetailPage() {
         (async () => {
             try {
                 const [stats, bal, tx] = await Promise.all([
-                    validatorService.getNetworkStats(DEFAULT_NETWORK),
+                    validatorService.getNetworkStats(network),
                     getAddressBalance(addr).catch(() => null),
                     getAddressTxCount(addr).catch(() => null),
                 ]);
@@ -64,7 +65,8 @@ export default function ValidatorDetailPage() {
             }
         })();
         return () => { cancelled = true; };
-    }, [addr]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [addr, network.id]);
 
     if (!addr) return null;
     const isOwner = isOwnerValidator(addr);

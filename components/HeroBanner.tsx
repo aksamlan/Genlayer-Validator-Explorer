@@ -4,15 +4,16 @@ import { useEffect, useState } from 'react';
 import { Box, Activity, Shield } from 'lucide-react';
 import { getLatestBlockNumber } from '@/lib/explorer-rpc';
 import { fmtNumber } from '@/lib/format';
+import { useNetwork } from '@/lib/network-context';
 import type { EpochInfo } from '@/types/validator';
 
 interface HeroBannerProps {
-    chainId: number;
     epochInfo: EpochInfo | null;
     blockNumber: string;
 }
 
-export function HeroBanner({ chainId, epochInfo, blockNumber }: HeroBannerProps) {
+export function HeroBanner({ epochInfo, blockNumber }: HeroBannerProps) {
+    const { network } = useNetwork();
     const [displayBlock, setDisplayBlock] = useState<string>(blockNumber);
 
     useEffect(() => {
@@ -48,18 +49,18 @@ export function HeroBanner({ chainId, epochInfo, blockNumber }: HeroBannerProps)
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">
-                            Live · Chain {chainId} · Rally Testnet
+                            Live · Chain {network.displayChainId} · {network.name} Testnet
                         </span>
                     </div>
 
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[0.95]">
                         <span className="text-gradient-warm">GenLayer</span>
                         <br />
-                        <span className="text-foreground/95">Asimov Network</span>
+                        <span className="text-foreground/95">{network.name} Network</span>
                     </h1>
 
                     <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                        Real-time block, transaction, and validator explorer for the <span className="text-foreground font-bold">GenLayer Asimov / Rally Testnet</span>.
+                        {network.tagline}
                     </p>
 
                     <div className="flex flex-wrap gap-2.5 pt-1">

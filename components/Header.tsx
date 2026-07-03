@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Activity, Box, Layers, Shield, Menu, X } from 'lucide-react';
 import { SearchBar } from './SearchBar';
+import { NetworkSwitcher } from './NetworkSwitcher';
 import { cn } from '@/lib/utils';
 
 const NAV = [
@@ -85,8 +86,13 @@ export function Header() {
                     <div className="flex-1" />
 
                     {/* Search — desktop */}
-                    <div className="hidden md:block w-[340px] xl:w-[420px]">
+                    <div className="hidden md:block w-[300px] xl:w-[380px]">
                         <SearchBar size="sm" />
+                    </div>
+
+                    {/* Network switcher — desktop */}
+                    <div className="hidden md:block">
+                        <NetworkSwitcher />
                     </div>
 
                     {/* Mobile menu button */}
@@ -99,9 +105,12 @@ export function Header() {
                     </button>
                 </div>
 
-                {/* Search — mobile (always visible under header on small screens) */}
-                <div className="md:hidden pb-3">
-                    <SearchBar size="sm" />
+                {/* Search + network switcher — mobile (always visible under header on small screens) */}
+                <div className="md:hidden pb-3 flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                        <SearchBar size="sm" />
+                    </div>
+                    <NetworkSwitcher />
                 </div>
             </div>
 

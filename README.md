@@ -2,7 +2,7 @@
 
 ![GenLayer Explorer Screenshot](public/logo.jpg)
 
-A comprehensive, real-time blockchain explorer for the **GenLayer Rally / Asimov Testnet** — blocks, transactions, validators, and addresses in one place.
+A comprehensive, real-time blockchain explorer for the **GenLayer Asimov & Bradbury testnets** — blocks, transactions, validators, and addresses in one place. Switch networks live from the header.
 
 ## 🚀 Features
 

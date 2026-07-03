@@ -2,9 +2,11 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { ExternalLink, BookOpen, Globe, Coins, Zap } from "lucide-react";
+import { useNetwork } from "@/lib/network-context";
 import { cn } from "@/lib/utils";
 
 export function LinksSection() {
+    const { network } = useNetwork();
     const links = [
         {
             title: "Official Website",
@@ -26,9 +28,9 @@ export function LinksSection() {
         },
         {
             title: "Block Explorer",
-            url: "https://devnet-explorer.rally.fun",
+            url: network.explorerUrl,
             icon: Zap,
-            description: "Rally Testnet Explorer",
+            description: network.explorerLabel,
             color: "text-amber-400",
             bg: "bg-amber-400/10",
             border: "border-amber-400/20"
