@@ -30,7 +30,7 @@ yarn-error.log*
 # vercel
 .vercel
 
-# claude code (local agent config / memory)
+# local memory
 /memory/
 
 # typescript

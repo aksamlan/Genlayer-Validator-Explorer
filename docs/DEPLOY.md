@@ -26,9 +26,15 @@ In the Vercel project's **Settings → Environment Variables**, add:
 
 | Name | Value | Notes |
 | --- | --- | --- |
-| `NEXT_PUBLIC_GENLAYER_RPC_URL` | `https://rally-testnet.genlayer.com/api` | Rally testnet JSON-RPC |
+| `NEXT_PUBLIC_GENLAYER_RPC_URL` | `https://rally-testnet.genlayer.com/api` | Asimov / Rally testnet JSON-RPC |
 | `NEXT_PUBLIC_EVM_RPC_URL` | `https://zksync-os-testnet-genlayer.zksync.dev` | Staking layer (ZKSync OS) |
-| `NEXT_PUBLIC_OWNER_VALIDATOR` | `0xYourValidatorAddress` | Optional — enables My Node card |
+| `NEXT_PUBLIC_OWNER_VALIDATOR` | `0xYourValidatorAddress` | Optional — enables My Node card on Asimov |
+| `NEXT_PUBLIC_BRADBURY_RPC_URL` | *(blank)* | Optional — Bradbury JSON-RPC override; falls back to the Asimov RPC |
+| `NEXT_PUBLIC_BRADBURY_EVM_RPC_URL` | *(blank)* | Optional — Bradbury staking-layer RPC override |
+| `NEXT_PUBLIC_BRADBURY_EXPLORER_URL` | *(blank)* | Optional — external block-explorer link for Bradbury |
+| `NEXT_PUBLIC_BRADBURY_OWNER_VALIDATOR` | `0xYourValidatorAddress` | Optional — enables My Node card on Bradbury |
+
+The header network switcher lets users toggle between **Asimov** and **Bradbury** at runtime; the `BRADBURY_*` overrides are only needed if that network uses different endpoints than Asimov.
 
 Apply each variable to the **Production**, **Preview**, and **Development** environments.
 
@@ -57,6 +63,7 @@ docker run -d \
   -e NEXT_PUBLIC_GENLAYER_RPC_URL=https://rally-testnet.genlayer.com/api \
   -e NEXT_PUBLIC_EVM_RPC_URL=https://zksync-os-testnet-genlayer.zksync.dev \
   -e NEXT_PUBLIC_OWNER_VALIDATOR=0xYourValidatorAddress \
+  -e NEXT_PUBLIC_BRADBURY_OWNER_VALIDATOR=0xYourValidatorAddress \
   --name explorer \
   genlayer-explorer
 ```

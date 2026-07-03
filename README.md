@@ -25,6 +25,11 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Asimov & Bradb
 *   **RPC health indicator** with latency probe.
 *   **Recent blocks / recent transactions** widgets.
 
+### Multi-Network
+*   **Runtime network switcher** in the header — toggle between the **Asimov** and **Bradbury** testnets live, no rebuild required.
+*   **Per-network selection is persisted** to `localStorage`, so your choice sticks across reloads.
+*   Every surface (hero branding, chain id, explorer link, validator registry, "My Node") follows the selected network — Bradbury has its own staking contract and validator set.
+
 ### UX
 *   **Sticky nav with mobile drawer**, **30-second polling**, glassmorphism with breathing room, dark theme.
 *   **Powered by `viem`** for the EVM layer and a thin JSON-RPC wrapper for GenLayer's `gen_*` methods.
@@ -59,11 +64,19 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Asimov & Bradb
 
 3.  Configure your environment in `.env.local`:
     ```bash
+    # Asimov (default network)
     NEXT_PUBLIC_GENLAYER_RPC_URL=https://rally-testnet.genlayer.com/api
     NEXT_PUBLIC_EVM_RPC_URL=https://zksync-os-testnet-genlayer.zksync.dev
 
-    # Optional: highlight your own validator on the dashboard
-    NEXT_PUBLIC_OWNER_VALIDATOR=0xYourValidatorAddress
+    # Bradbury (optional overrides — falls back to the Asimov RPCs above,
+    # then to the built-in defaults in config/genlayer)
+    NEXT_PUBLIC_BRADBURY_RPC_URL=
+    NEXT_PUBLIC_BRADBURY_EVM_RPC_URL=
+    NEXT_PUBLIC_BRADBURY_EXPLORER_URL=
+
+    # Optional: highlight your own validator on the dashboard (per network)
+    NEXT_PUBLIC_OWNER_VALIDATOR=0xYourAsimovValidatorAddress
+    NEXT_PUBLIC_BRADBURY_OWNER_VALIDATOR=0xYourBradburyValidatorAddress
     ```
 
 4.  Run the development server:
@@ -89,12 +102,14 @@ If you run a validator and want the most out of the explorer:
 │   └── globals.css       # Global styles with Tailwind directives
 ├── components/           # Reusable UI components
 │   ├── NetworkOverview.tsx  # Network statistics cards
+│   ├── NetworkSwitcher.tsx  # Header Asimov/Bradbury toggle
 │   ├── ValidatorTable.tsx   # Searchable validator list
 │   ├── LinksSection.tsx     # Official resources & referral links
 │   └── ...
 ├── lib/                  # Utilities and services
-│   ├── viem-client.ts    # Direct blockchain interaction
-│   └── networks.ts       # Network configuration
+│   ├── viem-client.ts       # Direct blockchain interaction
+│   ├── networks.ts          # Asimov + Bradbury network registry
+│   └── network-context.tsx  # NetworkProvider + useNetwork() hook
 └── public/               # Static assets (logos, icons)
 ```
 
