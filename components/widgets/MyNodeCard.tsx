@@ -16,7 +16,15 @@ interface MyNodeCardProps {
 }
 
 export function MyNodeCard({ ownerAddress, validators, isLoading }: MyNodeCardProps) {
-    const node = validators.find(v => v.address.toLowerCase() === ownerAddress.toLowerCase());
+    // Match against the validator address, the owner wallet, or the operator
+    // address so the card resolves regardless of which one the operator sets in
+    // NEXT_PUBLIC_OWNER_VALIDATOR.
+    const target = ownerAddress.toLowerCase();
+    const node = validators.find(v =>
+        v.address.toLowerCase() === target ||
+        v.owner?.toLowerCase() === target ||
+        v.operator?.toLowerCase() === target
+    );
 
     return (
         <Card className="relative overflow-hidden glass border-primary/30 bg-gradient-to-br from-primary/10 via-card/40 to-accent/10 group hover:border-primary/50 transition-all">
