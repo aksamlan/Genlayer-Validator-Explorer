@@ -5,11 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Zap } from 'lucide-react';
 import { getRecentBlocks, getBlockWithTransactions } from '@/lib/explorer-rpc';
+import { useNetwork } from '@/lib/network-context';
 
 const POLL_MS = 15_000;
 const WINDOW_BLOCKS = 8;
 
 export function TpsGauge() {
+    const { network } = useNetwork();
     const [tps, setTps] = useState<number | null>(null);
     const [latestBlock, setLatestBlock] = useState<bigint | null>(null);
 
@@ -17,9 +19,9 @@ export function TpsGauge() {
         let cancelled = false;
         const tick = async () => {
             try {
-                const heads = await getRecentBlocks(WINDOW_BLOCKS);
+                const heads = await getRecentBlocks(WINDOW_BLOCKS, network);
                 if (heads.length < 2) return;
-                const full = await Promise.all(heads.map(h => getBlockWithTransactions(h.number!)));
+                const full = await Promise.all(heads.map(h => getBlockWithTransactions(h.number!, network)));
                 const totalTx = full.reduce(
                     (a, b) => a + (Array.isArray(b.transactions) ? b.transactions.length : 0),
                     0
@@ -38,7 +40,8 @@ export function TpsGauge() {
         tick();
         const id = setInterval(tick, POLL_MS);
         return () => { cancelled = true; clearInterval(id); };
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [network.id]);
 
     return (
         <Card className="glass glass-hover card-lift border-white/5">

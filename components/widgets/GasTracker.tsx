@@ -5,16 +5,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Fuel } from 'lucide-react';
 import { realtimeStore } from '@/lib/realtime-store';
+import { useNetwork } from '@/lib/network-context';
 import { fmtGwei } from '@/lib/format';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 
 export function GasTracker() {
+    const { network } = useNetwork();
     const [tick, setTick] = useState(0);
 
     useEffect(() => {
+        realtimeStore.setNetwork(network);
         realtimeStore.start();
         return realtimeStore.subscribe(() => setTick(t => t + 1));
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [network.id]);
 
     const history = realtimeStore.getGasHistory();
     const latest = history[history.length - 1]?.v ?? null;

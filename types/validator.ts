@@ -9,6 +9,10 @@ export interface ValidatorInfo {
     isBanned: boolean;
     bannedEpoch?: string;
     primedEpoch?: string;
+    // v0.6 (Bradbury Phase 2+)
+    isQuarantined?: boolean;
+    isPending?: boolean;          // staked, waiting to enter the selectable set
+    hasUnclaimedRewards?: boolean;
 
     // Stake
     stake: string;
@@ -55,7 +59,37 @@ export interface EpochInfo {
     inflation: string;
     validatorMinStake: string;
     nextEpochEstimate: Date | null;
+
+    // v0.6 (Bradbury Phase 2+); absent/null on older deployments
+    pendingValidators?: number;
+    quarantinedValidators?: number;
+    unclaimedRewardsValidators?: number;
+    totalStake?: string;          // wei: self + delegated across all validators
+    pendingDeposits?: string;     // wei: deposits waiting to activate
+    lastFinalizedEpoch?: number | null;
+    epochStart?: Date | null;
+    epochMinDurationSec?: number | null;
+    epochInflation?: string | null;
+    delegatorMinStake?: string | null;
 }
+
+export type ValidatorStatus = 'active' | 'pending' | 'quarantined' | 'banned' | 'inactive';
+
+export function getValidatorStatus(v: Pick<ValidatorInfo, 'isActive' | 'isBanned' | 'isQuarantined' | 'isPending'>): ValidatorStatus {
+    if (v.isBanned) return 'banned';
+    if (v.isQuarantined) return 'quarantined';
+    if (v.isActive) return 'active';
+    if (v.isPending) return 'pending';
+    return 'inactive';
+}
+
+export const VALIDATOR_STATUS_LABEL: Record<ValidatorStatus, string> = {
+    active: 'Active',
+    pending: 'Pending',
+    quarantined: 'Quarantined',
+    banned: 'Banned',
+    inactive: 'Inactive',
+};
 
 export interface NetworkStats {
     epochInfo: EpochInfo;

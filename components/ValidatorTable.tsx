@@ -11,14 +11,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ValidatorInfo } from "@/types/validator";
+import { getValidatorStatus, type ValidatorInfo } from "@/types/validator";
 import { truncateAddress, cn, formatNumber } from "@/lib/utils";
 import { isOwnerValidator } from "@/lib/my-node";
 import { useToast } from "@/components/Toaster";
 import {
     Copy, Users, ChevronDown, ChevronUp, ShieldAlert, Layers,
     ChevronLeft, ChevronRight, Globe, ArrowDownToLine, ArrowUpFromLine, Crown, ArrowRight,
-    Twitter, Github, Send, Mail, User as UserIcon
+    Twitter, Github, Send, Mail, User as UserIcon, Gift
 } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useMemo } from "react";
@@ -31,15 +31,17 @@ interface ValidatorTableProps {
 
 const ITEMS_PER_PAGE = 10;
 
-type FilterTab = 'all' | 'active' | 'banned' | 'inactive';
+type FilterTab = 'all' | 'active' | 'pending' | 'quarantined' | 'banned' | 'inactive';
 
-const STATUS_ORDER: Record<string, number> = { active: 0, banned: 1, inactive: 2 };
+const STATUS_ORDER: Record<string, number> = { active: 0, pending: 1, quarantined: 2, banned: 3, inactive: 4 };
 
-function getStatus(v: ValidatorInfo): 'active' | 'banned' | 'inactive' {
-    if (v.isBanned) return 'banned';
-    if (v.isActive) return 'active';
-    return 'inactive';
-}
+const getStatus = getValidatorStatus;
+
+// Validators that count toward stake share: in the set, or about to join it.
+const isEligible = (v: ValidatorInfo) => {
+    const s = getStatus(v);
+    return s === 'active' || s === 'pending';
+};
 
 export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: ValidatorTableProps) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -59,9 +61,11 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
     // Counts for filter tabs
     const counts = useMemo(() => ({
         all: validators.length,
-        active: validators.filter(v => v.isActive && !v.isBanned).length,
-        banned: validators.filter(v => v.isBanned).length,
-        inactive: validators.filter(v => !v.isActive && !v.isBanned).length,
+        active: validators.filter(v => getStatus(v) === 'active').length,
+        pending: validators.filter(v => getStatus(v) === 'pending').length,
+        quarantined: validators.filter(v => getStatus(v) === 'quarantined').length,
+        banned: validators.filter(v => getStatus(v) === 'banned').length,
+        inactive: validators.filter(v => getStatus(v) === 'inactive').length,
     }), [validators]);
 
     // Sort active first, then banned, then inactive — then filter + search
@@ -70,10 +74,10 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
         [validators]
     );
 
-    // Stake rank lookup (over active validators only, descending by stake)
+    // Stake rank lookup (over active + pending validators, descending by stake)
     const { stakeRank, totalActiveStake } = useMemo(() => {
         const active = validators
-            .filter(v => v.isActive && !v.isBanned)
+            .filter(isEligible)
             .map(v => ({ addr: v.address.toLowerCase(), stake: BigInt(v.stake) }))
             .sort((a, b) => (b.stake > a.stake ? 1 : b.stake < a.stake ? -1 : 0));
         const rank: Record<string, number> = {};
@@ -121,6 +125,8 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
     const tabs: { key: FilterTab; label: string; color: string; activeClass: string }[] = [
         { key: 'all', label: 'All', color: 'text-foreground', activeClass: 'bg-white/10 text-foreground border-white/20' },
         { key: 'active', label: 'Active', color: 'text-primary', activeClass: 'bg-primary/15 text-primary border-primary/30' },
+        { key: 'pending', label: 'Pending', color: 'text-sky-400', activeClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
+        { key: 'quarantined', label: 'Quarantined', color: 'text-orange-400', activeClass: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
         { key: 'banned', label: 'Banned', color: 'text-destructive', activeClass: 'bg-destructive/15 text-destructive border-destructive/30' },
         { key: 'inactive', label: 'Inactive', color: 'text-muted-foreground', activeClass: 'bg-white/5 text-muted-foreground border-white/10' },
     ];
@@ -155,7 +161,7 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
 
                     {/* Filter Tabs */}
                     <div className="flex gap-2 flex-wrap">
-                        {tabs.map(tab => (
+                        {tabs.filter(tab => tab.key === 'all' || counts[tab.key] > 0 || tab.key === activeFilter).map(tab => (
                             <button
                                 key={tab.key}
                                 onClick={() => handleFilter(tab.key)}
@@ -231,6 +237,8 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                     isExpanded && "bg-white/[0.07] border-l-2",
                                                     isExpanded && status === 'active' && "border-l-primary/50",
                                                     isExpanded && status === 'banned' && "border-l-destructive/50",
+                                                    isExpanded && status === 'pending' && "border-l-sky-500/50",
+                                                    isExpanded && status === 'quarantined' && "border-l-orange-500/50",
                                                     isExpanded && status === 'inactive' && "border-l-muted/50",
                                                 )}
                                                 onClick={() => setExpandedValidator(isExpanded ? null : validator.address)}
@@ -257,6 +265,8 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                                 "absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-background",
                                                                 status === 'active' && "bg-primary",
                                                                 status === 'banned' && "bg-destructive",
+                                                                status === 'pending' && "bg-sky-400",
+                                                                status === 'quarantined' && "bg-orange-400",
                                                                 status === 'inactive' && "bg-muted-foreground/40"
                                                             )} />
                                                         </div>
@@ -267,6 +277,11 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                                 </p>
                                                                 {isOwnerValidator(validator.address) && (
                                                                     <Crown className="h-3 w-3 text-accent flex-shrink-0" />
+                                                                )}
+                                                                {validator.hasUnclaimedRewards && (
+                                                                    <span title="Has unclaimed rewards">
+                                                                        <Gift className="h-3 w-3 text-yellow-400 flex-shrink-0" />
+                                                                    </span>
                                                                 )}
                                                             </div>
                                                             <div className="flex items-center gap-2 mt-0.5">
@@ -358,7 +373,7 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                             </span>
                                                             <span className="text-[9px] text-muted-foreground font-bold">{tokenSymbol}</span>
                                                         </div>
-                                                        {totalActiveStake > 0n && validator.isActive && !validator.isBanned && (() => {
+                                                        {totalActiveStake > 0n && isEligible(validator) && (() => {
                                                             const share = Number((BigInt(validator.stake) * 10000n) / totalActiveStake) / 100;
                                                             return (
                                                                 <div className="flex items-center gap-1.5 mt-1">
@@ -381,6 +396,10 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                         <Badge variant="destructive" className="rounded-md text-[9px] tracking-widest font-black py-0 px-2">BANNED</Badge>
                                                     ) : status === 'active' ? (
                                                         <Badge className="rounded-md bg-primary/20 text-primary border border-primary/30 text-[9px] tracking-widest font-black py-0 px-2">ACTIVE</Badge>
+                                                    ) : status === 'pending' ? (
+                                                        <Badge className="rounded-md bg-sky-500/15 text-sky-400 border border-sky-500/30 text-[9px] tracking-widest font-black py-0 px-2" title="Staked — enters the validator set next epoch">PENDING</Badge>
+                                                    ) : status === 'quarantined' ? (
+                                                        <Badge className="rounded-md bg-orange-500/15 text-orange-400 border border-orange-500/30 text-[9px] tracking-widest font-black py-0 px-2">QUARANTINED</Badge>
                                                     ) : (
                                                         <Badge variant="secondary" className="rounded-md text-[9px] tracking-widest font-black py-0 px-2">INACTIVE</Badge>
                                                     )}
@@ -440,14 +459,21 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                                 <div className="bg-white/[0.04] rounded-xl border border-white/5 divide-y divide-white/5">
                                                                     <DetailRow
                                                                         label="Live"
-                                                                        value={validator.isActive ? "Active" : "Inactive"}
-                                                                        valueClass={validator.isActive ? "text-primary font-black" : "text-muted-foreground"}
+                                                                        value={validator.isActive ? "Active" : validator.isPending ? "Pending (next epoch)" : "Inactive"}
+                                                                        valueClass={validator.isActive ? "text-primary font-black" : validator.isPending ? "text-sky-400 font-black" : "text-muted-foreground"}
                                                                     />
                                                                     <DetailRow
                                                                         label="Security"
-                                                                        value={validator.isBanned ? "Banned" : "Good Standing"}
-                                                                        valueClass={validator.isBanned ? "text-destructive font-black" : "text-primary"}
+                                                                        value={validator.isBanned ? "Banned" : validator.isQuarantined ? "Quarantined" : "Good Standing"}
+                                                                        valueClass={validator.isBanned ? "text-destructive font-black" : validator.isQuarantined ? "text-orange-400 font-black" : "text-primary"}
                                                                     />
+                                                                    {validator.hasUnclaimedRewards !== undefined && (
+                                                                        <DetailRow
+                                                                            label="Rewards"
+                                                                            value={validator.hasUnclaimedRewards ? "Unclaimed" : "Nothing to claim"}
+                                                                            valueClass={validator.hasUnclaimedRewards ? "text-yellow-400 font-black" : "text-muted-foreground"}
+                                                                        />
+                                                                    )}
                                                                 </div>
                                                             </div>
 

@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Crown, ArrowRight, Globe, Shield, Coins } from 'lucide-react';
-import type { ValidatorInfo } from '@/types/validator';
+import { Crown, ArrowRight, Globe, Shield, Coins, Gift, PieChart, Hourglass } from 'lucide-react';
+import { getValidatorStatus, VALIDATOR_STATUS_LABEL, type ValidatorInfo } from '@/types/validator';
 import { truncateAddress } from '@/lib/utils';
 import { fmtNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,21 @@ export function MyNodeCard({ ownerAddress, validators, isLoading }: MyNodeCardPr
         v.owner?.toLowerCase() === target ||
         v.operator?.toLowerCase() === target
     );
+    const status = node ? getValidatorStatus(node) : null;
+
+    // Share of all active + pending stake on the network.
+    const eligible = validators.filter(v => {
+        const s = getValidatorStatus(v);
+        return s === 'active' || s === 'pending';
+    });
+    const totalEligible = eligible.reduce((a, v) => a + BigInt(v.stake) + BigInt(v.delegatedStake), 0n);
+    const nodeTotal = node ? BigInt(node.stake) + BigInt(node.delegatedStake) : 0n;
+    const sharePct = totalEligible > 0n && status && (status === 'active' || status === 'pending')
+        ? Number((nodeTotal * 10000n) / totalEligible) / 100
+        : null;
+    const rank = node && sharePct !== null
+        ? 1 + eligible.filter(v => BigInt(v.stake) + BigInt(v.delegatedStake) > nodeTotal).length
+        : null;
 
     return (
         <Card className="relative overflow-hidden glass border-primary/30 bg-gradient-to-br from-primary/10 via-card/40 to-accent/10 group hover:border-primary/50 transition-all">
@@ -46,11 +61,15 @@ export function MyNodeCard({ ownerAddress, validators, isLoading }: MyNodeCardPr
                     </div>
                 </div>
 
-                {isLoading || !node ? (
+                {isLoading && !node ? (
                     <>
                         <Skeleton className="h-6 w-40 mt-2 bg-white/5" />
                         <Skeleton className="h-12 w-full mt-3 bg-white/5" />
                     </>
+                ) : !node ? (
+                    <p className="text-xs text-muted-foreground mt-2">
+                        <code className="font-mono">{truncateAddress(ownerAddress)}</code> is not a validator on this network yet.
+                    </p>
                 ) : (
                     <>
                         <div className="flex items-center gap-3 mt-1">
@@ -74,14 +93,19 @@ export function MyNodeCard({ ownerAddress, validators, isLoading }: MyNodeCardPr
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <span className={cn(
                                         "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest",
-                                        node.isBanned
-                                            ? "bg-destructive/20 text-destructive"
-                                            : node.isActive
-                                            ? "bg-primary/20 text-primary"
-                                            : "bg-muted text-muted-foreground"
+                                        status === 'banned' && "bg-destructive/20 text-destructive",
+                                        status === 'quarantined' && "bg-orange-500/20 text-orange-400",
+                                        status === 'active' && "bg-primary/20 text-primary",
+                                        status === 'pending' && "bg-sky-500/20 text-sky-400",
+                                        status === 'inactive' && "bg-muted text-muted-foreground"
                                     )}>
-                                        {node.isBanned ? 'Banned' : node.isActive ? 'Active' : 'Inactive'}
+                                        {VALIDATOR_STATUS_LABEL[status!]}
                                     </span>
+                                    {node.hasUnclaimedRewards && (
+                                        <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest bg-yellow-500/15 text-yellow-400">
+                                            <Gift className="h-2.5 w-2.5" /> Rewards
+                                        </span>
+                                    )}
                                     <code className="text-[10px] text-muted-foreground/70 font-mono truncate">
                                         {truncateAddress(node.address)}
                                     </code>
@@ -89,7 +113,14 @@ export function MyNodeCard({ ownerAddress, validators, isLoading }: MyNodeCardPr
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 mt-4">
+                        {status === 'pending' && (
+                            <p className="mt-3 flex items-center gap-1.5 text-[10px] text-sky-400/90 font-bold">
+                                <Hourglass className="h-3 w-3" />
+                                Staked and waiting — joins the validator set at the next epoch.
+                            </p>
+                        )}
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
                             <Stat
                                 icon={Coins}
                                 label="Stake"
@@ -99,6 +130,11 @@ export function MyNodeCard({ ownerAddress, validators, isLoading }: MyNodeCardPr
                                 icon={Shield}
                                 label="Delegated"
                                 value={`${fmtNumber(BigInt(node.delegatedStake) / BigInt(1e18))} GEN`}
+                            />
+                            <Stat
+                                icon={PieChart}
+                                label="Net share"
+                                value={sharePct !== null ? `${sharePct.toFixed(2)}% · #${rank}` : '—'}
                             />
                             <Stat
                                 icon={Globe}

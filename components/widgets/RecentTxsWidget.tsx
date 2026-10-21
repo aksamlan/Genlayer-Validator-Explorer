@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getRecentTransactions } from '@/lib/explorer-rpc';
 import { fmtEther, fmtHexShort, fmtTimeAgo } from '@/lib/format';
+import { useNetwork } from '@/lib/network-context';
 
 const POLL_MS = 12_000;
 
@@ -19,6 +20,7 @@ interface TxRow {
 }
 
 export function RecentTxsWidget({ limit = 8 }: { limit?: number }) {
+    const { network } = useNetwork();
     const [txs, setTxs] = useState<TxRow[] | null>(null);
     const [err, setErr] = useState<string | null>(null);
 
@@ -26,7 +28,7 @@ export function RecentTxsWidget({ limit = 8 }: { limit?: number }) {
         let cancelled = false;
         const tick = async () => {
             try {
-                const res = await getRecentTransactions(3, limit);
+                const res = await getRecentTransactions(3, limit, network);
                 if (!cancelled) {
                     setTxs(
                         res.slice(0, limit).map(t => ({
@@ -46,7 +48,8 @@ export function RecentTxsWidget({ limit = 8 }: { limit?: number }) {
         tick();
         const id = setInterval(tick, POLL_MS);
         return () => { cancelled = true; clearInterval(id); };
-    }, [limit]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [limit, network.id]);
 
     if (err && !txs) {
         return (

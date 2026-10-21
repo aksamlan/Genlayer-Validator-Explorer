@@ -30,6 +30,34 @@ export function fmtEther(weiBig: bigint, decimals = 4): string {
     return ether.toFixed(decimals);
 }
 
+/**
+ * GEN amount from wei, keeping sub-1 values readable (min stake is 0.01 GEN on
+ * Bradbury Phase 2, which integer division would show as 0).
+ */
+export function fmtGen(wei: bigint | string | null | undefined, compact = false): string {
+    if (wei == null || wei === '') return '—';
+    const v = typeof wei === 'bigint' ? wei : BigInt(wei);
+    if (v === 0n) return '0';
+    const gen = Number(v) / 1e18;
+    if (compact && gen >= 1e6) return `${(gen / 1e6).toFixed(2)}M`;
+    if (compact && gen >= 1e4) return `${(gen / 1e3).toFixed(1)}K`;
+    if (gen >= 1) return gen.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    if (gen < 0.0001) return '< 0.0001';
+    return gen.toLocaleString('en-US', { maximumFractionDigits: 4 });
+}
+
+/** "3d 4h", "5h 12m", "42m 10s" — for countdowns. */
+export function fmtDuration(ms: number): string {
+    if (ms <= 0) return '0s';
+    const s = Math.floor(ms / 1000);
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m ${s % 60}s`;
+}
+
 export function fmtHexShort(hex: string, head = 8, tail = 6): string {
     if (!hex) return '—';
     if (hex.length <= head + tail) return hex;

@@ -9,10 +9,12 @@ import { getRecentBlocks } from '@/lib/explorer-rpc';
 import { fmtNumber, fmtTimeAgo, gasUsedPct } from '@/lib/format';
 import type { Block } from 'viem';
 import { truncateAddress } from '@/lib/utils';
+import { useNetwork } from '@/lib/network-context';
 
 const POLL_MS = 12_000;
 
 export function RecentBlocksWidget({ limit = 8 }: { limit?: number }) {
+    const { network } = useNetwork();
     const [blocks, setBlocks] = useState<Block[] | null>(null);
     const [err, setErr] = useState<string | null>(null);
 
@@ -21,7 +23,7 @@ export function RecentBlocksWidget({ limit = 8 }: { limit?: number }) {
 
         const tick = async () => {
             try {
-                const res = await getRecentBlocks(limit);
+                const res = await getRecentBlocks(limit, network);
                 if (!cancelled) {
                     setBlocks(res);
                     setErr(null);
@@ -34,7 +36,8 @@ export function RecentBlocksWidget({ limit = 8 }: { limit?: number }) {
         tick();
         const id = setInterval(tick, POLL_MS);
         return () => { cancelled = true; clearInterval(id); };
-    }, [limit]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [limit, network.id]);
 
     if (err && !blocks) {
         return (

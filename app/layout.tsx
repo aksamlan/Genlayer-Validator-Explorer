@@ -21,7 +21,7 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
     title: "GenLayer Explorer | Blocks · Transactions · Validators",
     description:
-        "Real-time blockchain explorer for the GenLayer Asimov and Bradbury testnets — transactions, blocks, validators, and live network statistics.",
+        "Real-time blockchain explorer for GenLayer Testnet Bradbury — transactions, blocks, validators, staking and live network statistics.",
     icons: { icon: '/logo.jpg' },
     openGraph: {
         title: "GenLayer Explorer",

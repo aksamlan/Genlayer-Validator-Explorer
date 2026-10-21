@@ -12,6 +12,11 @@ export interface NetworkConfig {
     displayChainId: number;
     explorerUrl: string;
     explorerLabel: string; // label for the external block-explorer link
+    // Staking contract generation. 'v0.6' (Bradbury Phase 2+) renamed the
+    // active-set reads and slimmed validatorView; see lib/viem-client.ts.
+    stakingVersion: 'v0.5' | 'v0.6';
+    status: 'active' | 'sunset';
+    phase?: string;        // e.g. "Phase 2"
 }
 
 const RALLY_CONFIG = GENLAYER_CONFIG.rallyTestnet;
@@ -38,6 +43,8 @@ export const ASIMOV_NETWORK: NetworkConfig = {
     displayChainId: RALLY_CONFIG.displayChainId,
     explorerUrl: RALLY_CONFIG.explorerUrl,
     explorerLabel: 'Rally Testnet Explorer',
+    stakingVersion: 'v0.5',
+    status: 'sunset',
     chainConfig: {
         stakingContract: {
             address: RALLY_CONFIG.stakingContractAddress,
@@ -55,30 +62,31 @@ export const ASIMOV_NETWORK: NetworkConfig = {
 export const RALLY_NETWORK = ASIMOV_NETWORK;
 
 // ── Bradbury ────────────────────────────────────────────────────────────────
-// Shares its RPC + staking endpoints with Asimov (per GenLayer docs); the
-// differences are branding, chain-id display, and the block explorer link.
+// Phase 2 runs on its own chain, so it no longer falls back to the Asimov
+// RPC env vars — only the BRADBURY_* overrides apply.
 
 const BRADBURY_RPC_URL =
     process.env.NEXT_PUBLIC_BRADBURY_RPC_URL ||
-    process.env.NEXT_PUBLIC_GENLAYER_RPC_URL ||
     BRADBURY_CONFIG.rpcUrl;
 
 const BRADBURY_EVM_RPC_URL =
     process.env.NEXT_PUBLIC_BRADBURY_EVM_RPC_URL ||
-    process.env.NEXT_PUBLIC_EVM_RPC_URL ||
     BRADBURY_CONFIG.evmRpcUrl;
 
 export const BRADBURY_NETWORK: NetworkConfig = {
     id: 'bradbury-testnet',
     name: 'Bradbury',
     fullName: 'GenLayer Bradbury Testnet',
-    tagline: 'Real-time block, transaction, and validator explorer for the GenLayer Bradbury Testnet.',
+    tagline: 'Real-time block, transaction, and validator explorer for GenLayer Testnet Bradbury — Phase 2.',
     rpcUrl: BRADBURY_RPC_URL,
     evmRpcUrl: BRADBURY_EVM_RPC_URL,
     tokenSymbol: 'GEN',
     displayChainId: BRADBURY_CONFIG.displayChainId,
     explorerUrl: process.env.NEXT_PUBLIC_BRADBURY_EXPLORER_URL || BRADBURY_CONFIG.explorerUrl,
     explorerLabel: 'Bradbury Testnet Explorer',
+    stakingVersion: 'v0.6',
+    status: 'active',
+    phase: 'Phase 2',
     chainConfig: {
         stakingContract: {
             address: BRADBURY_CONFIG.stakingContractAddress,
@@ -94,8 +102,9 @@ export const BRADBURY_NETWORK: NetworkConfig = {
 
 // ── Registry ────────────────────────────────────────────────────────────────
 
-export const NETWORKS: NetworkConfig[] = [ASIMOV_NETWORK, BRADBURY_NETWORK];
-export const DEFAULT_NETWORK = ASIMOV_NETWORK;
+// Bradbury is the only active testnet; Asimov stays selectable for its history.
+export const NETWORKS: NetworkConfig[] = [BRADBURY_NETWORK, ASIMOV_NETWORK];
+export const DEFAULT_NETWORK = BRADBURY_NETWORK;
 
 export function getNetworkById(id: string | null | undefined): NetworkConfig {
     return NETWORKS.find(n => n.id === id) ?? DEFAULT_NETWORK;

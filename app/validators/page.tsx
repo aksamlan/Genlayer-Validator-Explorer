@@ -23,7 +23,7 @@ export default function ValidatorsPage() {
             try {
                 const [s, b] = await Promise.all([
                     validatorService.getNetworkStats(network),
-                    getLatestBlockNumber().catch(() => null),
+                    getLatestBlockNumber(network).catch(() => null),
                 ]);
                 if (cancelled) return;
                 setStats(s);

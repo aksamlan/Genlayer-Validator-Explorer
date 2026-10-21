@@ -7,7 +7,9 @@ import {
     getValidatorContractInfo,
     getEpochNumber,
     getValidatorMinStake,
-    type ValidatorContractInfo
+    getEpochDetails,
+    type EpochDetails,
+    type ValidatorReadContext,
 } from './viem-client';
 import type { Address } from 'viem';
 
@@ -49,9 +51,14 @@ export class ValidatorService {
         }
     }
 
-    async getValidatorInfo(address: Address, network: NetworkConfig = DEFAULT_NETWORK, activeAddresses?: Address[]): Promise<ValidatorInfo> {
+    async getValidatorInfo(
+        address: Address,
+        network: NetworkConfig = DEFAULT_NETWORK,
+        activeAddresses?: Address[],
+        ctx?: ValidatorReadContext
+    ): Promise<ValidatorInfo> {
         try {
-            const contractInfo = await getValidatorContractInfo(address, network, activeAddresses);
+            const contractInfo = await getValidatorContractInfo(address, network, activeAddresses, ctx);
 
             return {
                 moniker: contractInfo.moniker || truncateAddress(address),
@@ -66,6 +73,9 @@ export class ValidatorService {
                 delegatedShares: contractInfo.delegatedShares.toString(),
                 isActive: contractInfo.live,
                 isBanned: contractInfo.banned,
+                isQuarantined: contractInfo.quarantined,
+                isPending: contractInfo.pending,
+                hasUnclaimedRewards: contractInfo.hasUnclaimedRewards,
                 bannedEpoch: contractInfo.bannedEpoch.toString(),
                 primedEpoch: contractInfo.primedEpoch.toString(),
                 pendingDeposits: contractInfo.deposit.toString(),
@@ -111,71 +121,74 @@ export class ValidatorService {
     }
 
     async getEpochInfo(network: NetworkConfig = DEFAULT_NETWORK): Promise<EpochInfo> {
-        try {
-            console.log(`[ValidatorService] Fetching epoch info for ${network.name}...`);
-
-            const [currentEpoch, minStake, activeAddresses, allAddresses] = await Promise.all([
-                getEpochNumber(network),
-                getValidatorMinStake(network),
-                this.getActiveValidators(network),
-                this.getAllValidators(network)
-            ]);
-
-            const validatorInfos = await Promise.all(
-                allAddresses.map(addr => this.getValidatorInfo(addr, network, activeAddresses))
-            );
-
-            const activeCount = validatorInfos.filter(v => v.isActive).length;
-            const bannedCount = validatorInfos.filter(v => v.isBanned).length;
-
-            console.log(`[ValidatorService] Epoch: ${currentEpoch}, Active: ${activeCount}, Total Knowledge: ${allAddresses.length}`);
-
-            return {
-                currentEpoch: Number(currentEpoch),
-                totalValidators: allAddresses.length,
-                activeValidators: activeCount,
-                bannedValidators: bannedCount,
-                inflation: '0',
-                validatorMinStake: minStake.toString(),
-                nextEpochEstimate: null,
-            };
-        } catch (error: any) {
-            console.error(`[ValidatorService] Error fetching epoch info on ${network.name}:`, error.message);
-            return {
-                currentEpoch: 0,
-                totalValidators: 0,
-                activeValidators: 0,
-                bannedValidators: 0,
-                inflation: '0',
-                validatorMinStake: '0',
-                nextEpochEstimate: null,
-            };
-        }
+        return (await this.getNetworkStats(network)).epochInfo;
     }
 
     async getNetworkStats(network: NetworkConfig = DEFAULT_NETWORK): Promise<NetworkStats> {
-        try {
-            const [activeAddresses, allAddresses] = await Promise.all([
-                this.getActiveValidators(network),
-                this.getAllValidators(network)
-            ]);
+        console.log(`[ValidatorService] Fetching network stats for ${network.name}...`);
 
-            const validatorInfos = await Promise.all(
-                allAddresses.map(addr => this.getValidatorInfo(addr, network, activeAddresses))
-            );
+        const [currentEpoch, minStake, activeAddresses, allAddresses, details] = await Promise.all([
+            getEpochNumber(network),
+            getValidatorMinStake(network),
+            this.getActiveValidators(network),
+            this.getAllValidators(network),
+            getEpochDetails(network),
+        ]);
 
-            const epochInfo = await this.getEpochInfo(network);
+        const ctx: ValidatorReadContext = {
+            minStake,
+            quarantined: new Set(details.quarantined),
+            banned: details.banned ? new Set(details.banned) : undefined,
+        };
+        const validators = await Promise.all(
+            allAddresses.map(addr => this.getValidatorInfo(addr, network, activeAddresses, ctx))
+        );
 
-            return {
-                epochInfo,
-                validators: validatorInfos,
-                lastUpdated: new Date(),
-            };
-        } catch (error) {
-            console.error(`[ValidatorService] Error fetching network stats on ${network.name}:`, error);
-            throw error;
-        }
+        const epochInfo = buildEpochInfo(Number(currentEpoch), minStake, validators, details, network.stakingVersion === 'v0.6');
+        console.log(`[ValidatorService] Epoch: ${epochInfo.currentEpoch}, Active: ${epochInfo.activeValidators}, Pending: ${epochInfo.pendingValidators}, Total: ${epochInfo.totalValidators}`);
+
+        return {
+            epochInfo,
+            validators,
+            lastUpdated: new Date(),
+        };
     }
+}
+
+function buildEpochInfo(
+    currentEpoch: number,
+    minStake: bigint,
+    validators: ValidatorInfo[],
+    details: EpochDetails,
+    isV06: boolean
+): EpochInfo {
+    let totalStake = 0n;
+    let pendingDeposits = 0n;
+    for (const v of validators) {
+        totalStake += BigInt(v.stake || '0') + BigInt(v.delegatedStake || '0');
+        pendingDeposits += BigInt(v.pendingDeposits || '0');
+    }
+
+    return {
+        currentEpoch,
+        totalValidators: validators.length,
+        activeValidators: validators.filter(v => v.isActive).length,
+        bannedValidators: validators.filter(v => v.isBanned).length,
+        inflation: details.inflation?.toString() ?? '0',
+        validatorMinStake: minStake.toString(),
+        nextEpochEstimate: details.nextEpochEstimate,
+        // Only v0.6 contracts report these; leave them unset so the UI hides them.
+        pendingValidators: isV06 ? validators.filter(v => v.isPending).length : undefined,
+        quarantinedValidators: isV06 ? details.quarantined.length : undefined,
+        unclaimedRewardsValidators: isV06 ? validators.filter(v => v.hasUnclaimedRewards).length : undefined,
+        totalStake: totalStake.toString(),
+        pendingDeposits: pendingDeposits.toString(),
+        lastFinalizedEpoch: details.lastFinalizedEpoch != null ? Number(details.lastFinalizedEpoch) : null,
+        epochStart: details.epochStart,
+        epochMinDurationSec: details.epochMinDurationSec,
+        epochInflation: details.inflation?.toString() ?? null,
+        delegatorMinStake: details.delegatorMinStake?.toString() ?? null,
+    };
 }
 
 // Export singleton instance

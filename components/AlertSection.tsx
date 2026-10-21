@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import type { ValidatorInfo } from "@/types/validator";
+import { getValidatorStatus, type ValidatorInfo } from "@/types/validator";
 import { AlertTriangle, ShieldOff, WifiOff, Copy } from "lucide-react";
 import { truncateAddress, cn } from "@/lib/utils";
 import { useState } from "react";
@@ -36,7 +36,11 @@ function CopyableAddress({ address }: { address: string }) {
 
 export function AlertSection({ validators }: AlertSectionProps) {
     const bannedValidators = validators.filter(v => v.isBanned);
-    const inactiveValidators = validators.filter(v => !v.isActive && !v.isBanned);
+    // Pending validators (staked, awaiting the next epoch) are not an alert.
+    const inactiveValidators = validators.filter(v => {
+        const s = getValidatorStatus(v);
+        return s === 'inactive' || s === 'quarantined';
+    });
 
     if (bannedValidators.length === 0 && inactiveValidators.length === 0) {
         return null;

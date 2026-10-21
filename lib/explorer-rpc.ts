@@ -1,17 +1,15 @@
 /**
  * Unified read-only RPC layer for the GenLayer Explorer.
  *
- * Two chains in play:
- *   - GenLayer Rally Testnet (chain 61899) — intelligent contracts + epoch + native eth_* methods
- *   - ZKSync OS Testnet      (chain 4221)  — staking contracts + real EVM blocks/txs
+ * Blocks, transactions and address state are read from the selected network's
+ * EVM RPC (`network.evmRpcUrl`), the same chain its staking contracts live on.
+ * Every reader takes an optional `network` and falls back to the default one.
  *
- * Blocks/transactions/address-history all live on ZKSync OS (the settlement layer).
- * Rally's eth_blockNumber is timestamp-based; it is NOT a traditional block stream.
+ * GENLAYER_RPC (Rally) is kept for GenVM `gen_*` calls in genvm-rpc.ts.
  */
 
 import {
     createPublicClient,
-    http,
     type Address,
     type Block,
     type Hash,
@@ -19,19 +17,22 @@ import {
     type TransactionReceipt,
 } from 'viem';
 import { GENLAYER_CONFIG } from '@/config/genlayer';
+import { DEFAULT_NETWORK, type NetworkConfig } from './networks';
+import { throttledHttp } from './rpc-transport';
 
-export const SETTLEMENT_RPC = GENLAYER_CONFIG.rallyTestnet.evmRpcUrl;
 export const GENLAYER_RPC = GENLAYER_CONFIG.rallyTestnet.rpcUrl;
-
-export const SETTLEMENT_CHAIN_ID = 4221;
 export const GENLAYER_CHAIN_ID = GENLAYER_CONFIG.rallyTestnet.displayChainId;
 
-const settlementClient = createPublicClient({
-    transport: http(SETTLEMENT_RPC, { timeout: 20_000, retryCount: 1 }),
-});
+const settlementClients: Record<string, ReturnType<typeof createPublicClient>> = {};
 
-export function getSettlementClient() {
-    return settlementClient;
+export function getSettlementClient(network: NetworkConfig = DEFAULT_NETWORK) {
+    const url = network.evmRpcUrl || network.rpcUrl;
+    if (!settlementClients[url]) {
+        settlementClients[url] = createPublicClient({
+            transport: throttledHttp(url, { timeout: 20_000 }),
+        });
+    }
+    return settlementClients[url];
 }
 
 // ── Raw JSON-RPC helper (used for endpoints viem doesn't natively shape nicely) ──
@@ -59,49 +60,53 @@ export async function rpcCall<T = unknown>(
 
 // ── Settlement layer reads (real blocks, txs, addresses) ──
 
-export async function getLatestBlockNumber(): Promise<bigint> {
-    return settlementClient.getBlockNumber();
+type Net = NetworkConfig;
+
+export async function getLatestBlockNumber(network: Net = DEFAULT_NETWORK): Promise<bigint> {
+    return getSettlementClient(network).getBlockNumber();
 }
 
-export async function getBlock(numberOrHash: bigint | Hash): Promise<Block> {
+export async function getBlock(numberOrHash: bigint | Hash, network: Net = DEFAULT_NETWORK): Promise<Block> {
+    const client = getSettlementClient(network);
     if (typeof numberOrHash === 'bigint') {
-        return settlementClient.getBlock({ blockNumber: numberOrHash, includeTransactions: false });
+        return client.getBlock({ blockNumber: numberOrHash, includeTransactions: false });
     }
-    return settlementClient.getBlock({ blockHash: numberOrHash, includeTransactions: false });
+    return client.getBlock({ blockHash: numberOrHash, includeTransactions: false });
 }
 
-export async function getBlockWithTransactions(numberOrHash: bigint | Hash) {
+export async function getBlockWithTransactions(numberOrHash: bigint | Hash, network: Net = DEFAULT_NETWORK) {
+    const client = getSettlementClient(network);
     if (typeof numberOrHash === 'bigint') {
-        return settlementClient.getBlock({ blockNumber: numberOrHash, includeTransactions: true });
+        return client.getBlock({ blockNumber: numberOrHash, includeTransactions: true });
     }
-    return settlementClient.getBlock({ blockHash: numberOrHash, includeTransactions: true });
+    return client.getBlock({ blockHash: numberOrHash, includeTransactions: true });
 }
 
-export async function getRecentBlocks(count = 15): Promise<Block[]> {
-    const head = await getLatestBlockNumber();
+export async function getRecentBlocks(count = 15, network: Net = DEFAULT_NETWORK): Promise<Block[]> {
+    const head = await getLatestBlockNumber(network);
     const numbers: bigint[] = [];
     for (let i = 0n; i < BigInt(count); i++) {
         if (head - i < 0n) break;
         numbers.push(head - i);
     }
-    return Promise.all(numbers.map(n => getBlock(n)));
+    return Promise.all(numbers.map(n => getBlock(n, network)));
 }
 
-export async function getTransaction(hash: Hash): Promise<Transaction> {
-    return settlementClient.getTransaction({ hash });
+export async function getTransaction(hash: Hash, network: Net = DEFAULT_NETWORK): Promise<Transaction> {
+    return getSettlementClient(network).getTransaction({ hash });
 }
 
-export async function getTransactionReceipt(hash: Hash): Promise<TransactionReceipt | null> {
+export async function getTransactionReceipt(hash: Hash, network: Net = DEFAULT_NETWORK): Promise<TransactionReceipt | null> {
     try {
-        return await settlementClient.getTransactionReceipt({ hash });
+        return await getSettlementClient(network).getTransactionReceipt({ hash });
     } catch {
         return null;
     }
 }
 
-export async function getRecentTransactions(blockScan = 5, maxTxs = 25) {
-    const blocks = await getRecentBlocks(blockScan).then(bs =>
-        Promise.all(bs.map(b => getBlockWithTransactions(b.number!)))
+export async function getRecentTransactions(blockScan = 5, maxTxs = 25, network: Net = DEFAULT_NETWORK) {
+    const blocks = await getRecentBlocks(blockScan, network).then(bs =>
+        Promise.all(bs.map(b => getBlockWithTransactions(b.number!, network)))
     );
     const txs: Array<Transaction & { blockTimestamp: bigint }> = [];
     for (const b of blocks) {
@@ -113,21 +118,21 @@ export async function getRecentTransactions(blockScan = 5, maxTxs = 25) {
     return txs;
 }
 
-export async function getAddressBalance(address: Address): Promise<bigint> {
-    return settlementClient.getBalance({ address });
+export async function getAddressBalance(address: Address, network: Net = DEFAULT_NETWORK): Promise<bigint> {
+    return getSettlementClient(network).getBalance({ address });
 }
 
-export async function getAddressCode(address: Address): Promise<string> {
-    const code = await settlementClient.getCode({ address });
+export async function getAddressCode(address: Address, network: Net = DEFAULT_NETWORK): Promise<string> {
+    const code = await getSettlementClient(network).getCode({ address });
     return code ?? '0x';
 }
 
-export async function getAddressTxCount(address: Address): Promise<number> {
-    return settlementClient.getTransactionCount({ address });
+export async function getAddressTxCount(address: Address, network: Net = DEFAULT_NETWORK): Promise<number> {
+    return getSettlementClient(network).getTransactionCount({ address });
 }
 
-export async function getGasPrice(): Promise<bigint> {
-    return settlementClient.getGasPrice();
+export async function getGasPrice(network: Net = DEFAULT_NETWORK): Promise<bigint> {
+    return getSettlementClient(network).getGasPrice();
 }
 
 // ── Search heuristics ──

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { validatorService } from '@/lib/validator-service';
 import { NetworkConfig } from '@/lib/networks';
 import { useNetwork } from '@/lib/network-context';
@@ -16,6 +16,7 @@ import { BlockTimeChart } from '@/components/widgets/BlockTimeChart';
 import { TpsGauge } from '@/components/widgets/TpsGauge';
 import { NetworkHealth } from '@/components/widgets/NetworkHealth';
 import { EpochProgress } from '@/components/widgets/EpochProgress';
+import { StakingOverview } from '@/components/widgets/StakingOverview';
 import { MyNodeCard } from '@/components/widgets/MyNodeCard';
 import { StakeDistribution } from '@/components/widgets/StakeDistribution';
 import { RecentBlocksWidget } from '@/components/widgets/RecentBlocksWidget';
@@ -33,13 +34,17 @@ export default function Home() {
     const [blockNumber, setBlockNumber] = useState<string>('0');
     const { network: currentNetwork } = useNetwork();
     const owner = getOwnerValidatorAddress(currentNetwork.id);
+    // Drops responses that land after the user switched networks.
+    const activeNetworkId = useRef(currentNetwork.id);
 
     const fetchData = async (network: NetworkConfig = currentNetwork) => {
         try {
             const stats = await validatorService.getNetworkStats(network);
+            if (activeNetworkId.current !== network.id) return;
             setNetworkStats(stats);
             try {
-                const block = await getLatestBlockNumber();
+                const block = await getLatestBlockNumber(network);
+                if (activeNetworkId.current !== network.id) return;
                 setBlockNumber(block.toString());
             } catch (e) {
                 console.warn('Could not fetch block number:', e);
@@ -54,6 +59,10 @@ export default function Home() {
     };
 
     useEffect(() => {
+        activeNetworkId.current = currentNetwork.id;
+        setNetworkStats(null);
+        setBlockNumber('0');
+        setIsLoading(true);
         fetchData(currentNetwork);
         const id = setInterval(() => fetchData(currentNetwork), POLLING_INTERVAL);
         return () => clearInterval(id);
@@ -104,6 +113,22 @@ export default function Home() {
                     <NetworkHealth />
                     <EpochProgress epochInfo={networkStats?.epochInfo ?? null} />
                 </div>
+            </section>
+
+            {/* Staking & validator set */}
+            <section className="space-y-4">
+                <SectionHeader
+                    accent="accent"
+                    title="Staking Overview"
+                    subtitle={currentNetwork.phase
+                        ? `${currentNetwork.fullName} · ${currentNetwork.phase} — validator set and stake, read from the staking contract`
+                        : 'Validator set and stake, read from the staking contract'}
+                />
+                <StakingOverview
+                    epochInfo={networkStats?.epochInfo ?? null}
+                    isLoading={isLoading}
+                    tokenSymbol={currentNetwork.tokenSymbol}
+                />
             </section>
 
             {/* My Node + Stake Distribution */}

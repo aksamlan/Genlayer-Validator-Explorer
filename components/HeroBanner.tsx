@@ -27,13 +27,14 @@ export function HeroBanner({ epochInfo, blockNumber }: HeroBannerProps) {
         let cancelled = false;
         const tick = async () => {
             try {
-                const b = await getLatestBlockNumber();
+                const b = await getLatestBlockNumber(network);
                 if (!cancelled) setDisplayBlock(b.toString());
             } catch { /* ignore */ }
         };
         const id = setInterval(tick, 6000);
         return () => { cancelled = true; clearInterval(id); };
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [network.id]);
 
     return (
         <section className="relative overflow-hidden rounded-3xl border border-white/10 hero-band">
@@ -49,7 +50,7 @@ export function HeroBanner({ epochInfo, blockNumber }: HeroBannerProps) {
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">
-                            Live · Chain {network.displayChainId} · {network.name} Testnet
+                            {network.status === 'sunset' ? 'Sunset' : 'Live'} · Chain {network.displayChainId} · {network.name} Testnet{network.phase ? ` · ${network.phase}` : ''}
                         </span>
                     </div>
 

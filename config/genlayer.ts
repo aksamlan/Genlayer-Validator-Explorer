@@ -15,24 +15,20 @@ const RALLY_TESTNET = {
 
 export const GENLAYER_CONFIG = {
     rallyTestnet: RALLY_TESTNET,
-    // Testnet Bradbury (bradbury-phase1). Same underlying chain as Asimov
-    // (zkSync OS settlement, chain 4221) — only the consensus deployment differs.
-    // The explorer reads validators/stake from the EVM staking contract over the
-    // shared zkSync RPC; note the node's CLI RPC (rpc-bradbury.genlayer.com) is
-    // NOT usable by viem (net_version -32601), so we keep the zkSync EVM RPC.
+    // Testnet Bradbury, Phase 2 (node network name bradbury-phase2, node v0.6).
+    // A fresh chain: Phase 1 validators/stake were not carried over. One RPC
+    // serves both the GenLayer and EVM methods, so blocks, txs and staking reads
+    // all go through it. Contracts: genlayer-consensus deployments/bradbury-phase-2.json
     bradburyTestnet: {
-        networkName: 'bradbury-phase1',
-        // GenLayer JSON-RPC (GenVM ops) — shared with Asimov
-        rpcUrl: 'https://rally-testnet.genlayer.com/api',
-        // EVM RPC — zkSync OS Testnet (staking contracts live here)
-        evmRpcUrl: 'https://zksync-os-testnet-genlayer.zksync.dev',
-        // Bradbury consensus deployment (distinct from Asimov)
-        stakingContractAddress: '0x4A4449E617F8D10FDeD0b461CadEf83939E821A5',
-        consensusAddress: '0x8aCE036C8C3C5D603dB546b031302FCf149648E8', // AddressManager
-        consensusMainAddress: '0x0112Bf6e83497965A5fdD6Dad1E447a6E004271D',
+        networkName: 'bradbury-phase2',
+        rpcUrl: 'https://rpc.testnet-chain.genlayer.com',
+        evmRpcUrl: 'https://rpc.testnet-chain.genlayer.com',
+        stakingContractAddress: '0xD8fBa96C0dBB0257028dBc0107060b958e5c7113',
+        consensusAddress: '0x3F71AE080BD6270A91dBcc7960d88797828538E0', // AddressManager
+        validatorWalletFactoryAddress: '0x399FCBe6b442903cbA4d3B647B4b30EddF729314',
+        vestingFactoryAddress: '0x82cA5e0e7A9345CF3ED5ee68A7fba41EF2202316',
         displayChainId: 4221,
-        explorerUrl: 'https://explorer-bradbury.genlayer.com',
-        genesisBlock: 501711,
+        explorerUrl: 'https://scan.testnet-chain.genlayer.com',
         discoveryStartBlock: 0n,
     },
 };

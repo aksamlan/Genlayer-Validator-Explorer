@@ -5,15 +5,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Clock } from 'lucide-react';
 import { realtimeStore } from '@/lib/realtime-store';
+import { useNetwork } from '@/lib/network-context';
 import { ResponsiveContainer, LineChart, Line, Tooltip, YAxis } from 'recharts';
 
 export function BlockTimeChart() {
+    const { network } = useNetwork();
     const [, setTick] = useState(0);
 
     useEffect(() => {
+        realtimeStore.setNetwork(network);
         realtimeStore.start();
         return realtimeStore.subscribe(() => setTick(t => t + 1));
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [network.id]);
 
     const times = realtimeStore.getBlockTimes();
     const data = times.map((s, i) => ({ i, secs: s.v }));

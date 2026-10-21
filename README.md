@@ -2,7 +2,7 @@
 
 ![GenLayer Explorer Screenshot](public/logo.jpg)
 
-A comprehensive, real-time blockchain explorer for the **GenLayer Asimov & Bradbury testnets** — blocks, transactions, validators, and addresses in one place. Switch networks live from the header.
+A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (Phase 2)** — blocks, transactions, validators, and addresses in one place. The sunset Asimov testnet stays selectable from the header for its history.
 
 ## 🚀 Features
 
@@ -15,7 +15,14 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Asimov & Bradb
 ### Validator Tools
 *   **Validator registry** (`/validators`) with search, filtering, and per-validator drilldown.
 *   **Validator profile pages** (`/validator/[address]`) — identity card, stake breakdown, pending ops, on-chain details.
-*   **"My Node" highlight** — set `NEXT_PUBLIC_OWNER_VALIDATOR` to feature your own validator on the dashboard with a crown badge.
+*   **"My Node" highlight** — set `NEXT_PUBLIC_OWNER_VALIDATOR` to feature your own validator on the dashboard with a crown badge, status, unclaimed-rewards flag and share of network stake.
+*   **Validator statuses** — Active, Pending (staked, joins the set next epoch), Quarantined, Banned, Inactive — with filter tabs in the registry.
+
+### Staking Overview (v0.6 contracts)
+*   **Epoch countdown** — live timer and progress bar to the next epoch, plus the last finalized epoch.
+*   **Validator set** — joined, active (selectable), pending, quarantined and banned counts.
+*   **Stake** — total staked, pending deposits, validator/delegator minimums, current-epoch inflation.
+*   **Rewards** — how many validators have unclaimed rewards.
 
 ### Live Metrics
 *   **Gas price tracker** with sparkline (`recharts`).
@@ -26,9 +33,10 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Asimov & Bradb
 *   **Recent blocks / recent transactions** widgets.
 
 ### Multi-Network
-*   **Runtime network switcher** in the header — toggle between the **Asimov** and **Bradbury** testnets live, no rebuild required.
+*   **Runtime network switcher** in the header — **Bradbury Phase 2** (default) and the sunset **Asimov** testnet, live, no rebuild required.
 *   **Per-network selection is persisted** to `localStorage`, so your choice sticks across reloads.
-*   Every surface (hero branding, chain id, explorer link, validator registry, "My Node") follows the selected network — Bradbury has its own staking contract and validator set.
+*   Every surface (hero branding, chain id, explorer link, blocks, transactions, gas, validator registry, "My Node") follows the selected network — each network has its own chain, staking contract and validator set.
+*   RPC calls are capped at 4 in flight per endpoint and retried on HTTP 429, since the Bradbury public RPC rate-limits bursts.
 
 ### UX
 *   **Sticky nav with mobile drawer**, **30-second polling**, glassmorphism with breathing room, dark theme.
@@ -64,15 +72,15 @@ A comprehensive, real-time blockchain explorer for the **GenLayer Asimov & Bradb
 
 3.  Configure your environment in `.env.local`:
     ```bash
-    # Asimov (default network)
-    NEXT_PUBLIC_GENLAYER_RPC_URL=https://rally-testnet.genlayer.com/api
-    NEXT_PUBLIC_EVM_RPC_URL=https://zksync-os-testnet-genlayer.zksync.dev
-
-    # Bradbury (optional overrides — falls back to the Asimov RPCs above,
-    # then to the built-in defaults in config/genlayer)
+    # Bradbury Phase 2 (default network) — optional overrides; the built-in
+    # defaults in config/genlayer.ts point at https://rpc.testnet-chain.genlayer.com
     NEXT_PUBLIC_BRADBURY_RPC_URL=
     NEXT_PUBLIC_BRADBURY_EVM_RPC_URL=
     NEXT_PUBLIC_BRADBURY_EXPLORER_URL=
+
+    # Asimov (sunset)
+    NEXT_PUBLIC_GENLAYER_RPC_URL=https://rally-testnet.genlayer.com/api
+    NEXT_PUBLIC_EVM_RPC_URL=https://zksync-os-testnet-genlayer.zksync.dev
 
     # Optional: highlight your own validator on the dashboard (per network)
     NEXT_PUBLIC_OWNER_VALIDATOR=0xYourAsimovValidatorAddress
@@ -102,13 +110,15 @@ If you run a validator and want the most out of the explorer:
 │   └── globals.css       # Global styles with Tailwind directives
 ├── components/           # Reusable UI components
 │   ├── NetworkOverview.tsx  # Network statistics cards
-│   ├── NetworkSwitcher.tsx  # Header Asimov/Bradbury toggle
+│   ├── NetworkSwitcher.tsx  # Header Bradbury/Asimov toggle
 │   ├── ValidatorTable.tsx   # Searchable validator list
 │   ├── LinksSection.tsx     # Official resources & referral links
 │   └── ...
 ├── lib/                  # Utilities and services
-│   ├── viem-client.ts       # Direct blockchain interaction
-│   ├── networks.ts          # Asimov + Bradbury network registry
+│   ├── viem-client.ts       # Staking contract reads (v0.5 + v0.6 ABIs)
+│   ├── explorer-rpc.ts      # Blocks / txs / addresses for the selected network
+│   ├── rpc-transport.ts     # Rate-limit-friendly viem transport
+│   ├── networks.ts          # Bradbury + Asimov network registry
 │   └── network-context.tsx  # NetworkProvider + useNetwork() hook
 └── public/               # Static assets (logos, icons)
 ```

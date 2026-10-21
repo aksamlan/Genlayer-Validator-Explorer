@@ -12,8 +12,10 @@ import { fmtEther, fmtNumber, fmtTimeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/Toaster';
 import type { Hash, Transaction, TransactionReceipt } from 'viem';
+import { useNetwork } from '@/lib/network-context';
 
 export default function TxDetailPage() {
+    const { network } = useNetwork();
     const params = useParams<{ hash: string }>();
     const hash = params?.hash as Hash;
     const toast = useToast();
@@ -27,13 +29,13 @@ export default function TxDetailPage() {
         let cancelled = false;
         (async () => {
             try {
-                const t = await getTransaction(hash);
+                const t = await getTransaction(hash, network);
                 if (cancelled) return;
                 setTx(t);
 
                 const [r, b] = await Promise.all([
-                    getTransactionReceipt(hash),
-                    t.blockNumber != null ? getBlock(t.blockNumber) : Promise.resolve(null),
+                    getTransactionReceipt(hash, network),
+                    t.blockNumber != null ? getBlock(t.blockNumber, network) : Promise.resolve(null),
                 ]);
                 if (cancelled) return;
                 setReceipt(r);
@@ -44,7 +46,7 @@ export default function TxDetailPage() {
             }
         })();
         return () => { cancelled = true; };
-    }, [hash]);
+    }, [hash, network.id]);
 
     const copy = (text: string) => {
         navigator.clipboard.writeText(text).then(() => {

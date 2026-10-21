@@ -12,8 +12,10 @@ import { fmtNumber, fmtTimeAgo, fmtHexShort, fmtEther, gasUsedPct } from '@/lib/
 import { truncateAddress, cn } from '@/lib/utils';
 import { useToast } from '@/components/Toaster';
 import type { Block, Transaction } from 'viem';
+import { useNetwork } from '@/lib/network-context';
 
 export default function BlockDetailPage() {
+    const { network } = useNetwork();
     const params = useParams<{ number: string }>();
     const num = params?.number ? BigInt(params.number) : 0n;
     const toast = useToast();
@@ -26,8 +28,8 @@ export default function BlockDetailPage() {
         (async () => {
             try {
                 const [b, h] = await Promise.all([
-                    getBlockWithTransactions(num),
-                    getLatestBlockNumber(),
+                    getBlockWithTransactions(num, network),
+                    getLatestBlockNumber(network),
                 ]);
                 if (!cancelled) {
                     setBlock(b);
@@ -39,7 +41,7 @@ export default function BlockDetailPage() {
             }
         })();
         return () => { cancelled = true; };
-    }, [num]);
+    }, [num, network.id]);
 
     const copy = (text: string, label = 'Hash') => {
         navigator.clipboard.writeText(text).then(() => {

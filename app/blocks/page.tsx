@@ -13,11 +13,13 @@ import {
 import { fmtNumber, fmtTimeAgo, gasUsedPct } from '@/lib/format';
 import { truncateAddress, cn } from '@/lib/utils';
 import type { Block } from 'viem';
+import { useNetwork } from '@/lib/network-context';
 
 const PER_PAGE = 20;
 const POLL_MS = 12_000;
 
 export default function BlocksPage() {
+    const { network } = useNetwork();
     const [head, setHead] = useState<bigint | null>(null);
     const [page, setPage] = useState(0);
     const [blocks, setBlocks] = useState<Block[] | null>(null);
@@ -28,7 +30,7 @@ export default function BlocksPage() {
         let cancelled = false;
         const tick = async () => {
             try {
-                const h = await getLatestBlockNumber();
+                const h = await getLatestBlockNumber(network);
                 if (cancelled) return;
                 setHead(h);
 
@@ -39,7 +41,7 @@ export default function BlocksPage() {
                     numbers.push(start - i);
                 }
 
-                const fetched = await Promise.all(numbers.map(n => getBlock(n)));
+                const fetched = await Promise.all(numbers.map(n => getBlock(n, network)));
                 if (cancelled) return;
                 setBlocks(fetched);
                 setErr(null);
@@ -54,7 +56,7 @@ export default function BlocksPage() {
         tick();
         const id = setInterval(tick, POLL_MS);
         return () => { cancelled = true; clearInterval(id); };
-    }, [page]);
+    }, [page, network.id]);
 
     const total = head != null ? Number(head) : 0;
 

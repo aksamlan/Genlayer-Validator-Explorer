@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { PieChart as PieIcon } from 'lucide-react';
-import type { ValidatorInfo } from '@/types/validator';
+import { getValidatorStatus, type ValidatorInfo } from '@/types/validator';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { fmtNumber } from '@/lib/format';
 import { truncateAddress } from '@/lib/utils';
@@ -19,7 +19,11 @@ const COLORS = [
 ];
 
 export function StakeDistribution({ validators }: { validators: ValidatorInfo[] }) {
-    const active = validators.filter(v => v.isActive && !v.isBanned);
+    // Active + pending, so the chart is meaningful before the first set forms (epoch 0).
+    const active = validators.filter(v => {
+        const s = getValidatorStatus(v);
+        return s === 'active' || s === 'pending';
+    });
     const sorted = [...active]
         .map(v => ({
             address: v.address,

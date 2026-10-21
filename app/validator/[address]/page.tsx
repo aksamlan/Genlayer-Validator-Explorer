@@ -21,6 +21,7 @@ import { fmtEther, fmtNumber } from '@/lib/format';
 import { truncateAddress, cn } from '@/lib/utils';
 import type { ValidatorInfo } from '@/types/validator';
 import type { Address } from 'viem';
+import { ValidatorStatusBadge } from '@/components/ValidatorStatusBadge';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
 
@@ -43,8 +44,8 @@ export default function ValidatorDetailPage() {
             try {
                 const [stats, bal, tx] = await Promise.all([
                     validatorService.getNetworkStats(network),
-                    getAddressBalance(addr).catch(() => null),
-                    getAddressTxCount(addr).catch(() => null),
+                    getAddressBalance(addr, network).catch(() => null),
+                    getAddressTxCount(addr, network).catch(() => null),
                 ]);
                 if (cancelled) return;
                 const v = stats.validators.find(x => x.address.toLowerCase() === addr.toLowerCase());
@@ -56,7 +57,7 @@ export default function ValidatorDetailPage() {
                 setBalance(bal);
                 setTxCount(tx);
                 if (v.operator && v.operator !== ZERO) {
-                    const opBal = await getAddressBalance(v.operator as Address).catch(() => null);
+                    const opBal = await getAddressBalance(v.operator as Address, network).catch(() => null);
                     if (!cancelled) setOperatorBalance(opBal);
                 }
                 setErr(null);
@@ -137,14 +138,12 @@ export default function ValidatorDetailPage() {
                                             <Crown className="h-2.5 w-2.5" /> MY NODE
                                         </Badge>
                                     )}
-                                    <Badge className={cn(
-                                        "text-[9px] tracking-widest font-black",
-                                        validator.isBanned ? "bg-destructive/20 text-destructive border-destructive/30" :
-                                        validator.isActive ? "bg-primary/15 text-primary border-primary/30" :
-                                        "bg-muted text-muted-foreground"
-                                    )}>
-                                        {validator.isBanned ? 'BANNED' : validator.isActive ? 'ACTIVE' : 'INACTIVE'}
-                                    </Badge>
+                                    <ValidatorStatusBadge validator={validator} />
+                                    {validator.hasUnclaimedRewards && (
+                                        <Badge className="bg-yellow-500/15 text-yellow-400 border-yellow-500/30 text-[9px] tracking-widest font-black">
+                                            UNCLAIMED REWARDS
+                                        </Badge>
+                                    )}
                                 </div>
 
                                 {validator.description && (
@@ -279,9 +278,20 @@ export default function ValidatorDetailPage() {
                                 </Row>
                                 <Row label="Status">
                                     <span className="text-xs font-bold">
-                                        {validator.isBanned ? 'Banned' : validator.isActive ? 'Active in validator set' : 'Inactive'}
+                                        {validator.isBanned ? 'Banned'
+                                            : validator.isQuarantined ? 'Quarantined'
+                                            : validator.isActive ? 'Active in validator set'
+                                            : validator.isPending ? 'Pending — joins the set next epoch'
+                                            : 'Inactive'}
                                     </span>
                                 </Row>
+                                {validator.hasUnclaimedRewards !== undefined && (
+                                    <Row label="Rewards">
+                                        <span className={cn("text-xs font-bold", validator.hasUnclaimedRewards && "text-yellow-400")}>
+                                            {validator.hasUnclaimedRewards ? 'Unclaimed rewards available' : 'Nothing to claim'}
+                                        </span>
+                                    </Row>
+                                )}
                                 {validator.primedEpoch && validator.primedEpoch !== '0' && (
                                     <Row label="Primed Epoch">
                                         <span className="text-xs font-mono">#{validator.primedEpoch}</span>

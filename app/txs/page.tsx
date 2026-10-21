@@ -13,6 +13,7 @@ import {
 import { fmtEther, fmtHexShort, fmtNumber, fmtTimeAgo } from '@/lib/format';
 import { truncateAddress, cn } from '@/lib/utils';
 import type { Transaction } from 'viem';
+import { useNetwork } from '@/lib/network-context';
 
 const PER_PAGE = 25;
 const POLL_MS = 15_000;
@@ -27,6 +28,7 @@ interface RowTx {
 }
 
 export default function TxsPage() {
+    const { network } = useNetwork();
     const [page, setPage] = useState(0);
     const [rows, setRows] = useState<RowTx[] | null>(null);
     const [err, setErr] = useState<string | null>(null);
@@ -35,12 +37,12 @@ export default function TxsPage() {
         let cancelled = false;
         const tick = async () => {
             try {
-                const head = await getLatestBlockNumber();
+                const head = await getLatestBlockNumber(network);
                 const start = head - BigInt(page * 3); // each page = 3 blocks scanned
                 const collected: RowTx[] = [];
                 let n = start;
                 while (collected.length < PER_PAGE && n >= 0n) {
-                    const b = await getBlockWithTransactions(n);
+                    const b = await getBlockWithTransactions(n, network);
                     const txs = (b.transactions ?? []) as Transaction[];
                     for (const t of txs) {
                         collected.push({
@@ -68,7 +70,7 @@ export default function TxsPage() {
         tick();
         const id = setInterval(tick, POLL_MS);
         return () => { cancelled = true; clearInterval(id); };
-    }, [page]);
+    }, [page, network.id]);
 
     return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

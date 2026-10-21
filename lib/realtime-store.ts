@@ -7,6 +7,7 @@
  */
 
 import { getGasPrice, getRecentBlocks } from './explorer-rpc';
+import { DEFAULT_NETWORK, type NetworkConfig } from './networks';
 
 interface Sample<T> {
     t: number; // unix ms
@@ -20,6 +21,7 @@ class RealtimeStore {
     private blockTimes: Sample<number>[] = [];
     private listeners = new Set<() => void>();
     private pollTimer: ReturnType<typeof setInterval> | null = null;
+    private network: NetworkConfig = DEFAULT_NETWORK;
 
     subscribe(fn: () => void) {
         this.listeners.add(fn);
@@ -37,6 +39,16 @@ class RealtimeStore {
         return this.blockTimes;
     }
 
+    /** Switch the sampled network; drops the previous network's samples. */
+    setNetwork(network: NetworkConfig) {
+        if (network.id === this.network.id) return;
+        this.network = network;
+        this.gasHistory = [];
+        this.blockTimes = [];
+        this.notify();
+        if (this.pollTimer) this.tick();
+    }
+
     start(intervalMs = 12_000) {
         if (this.pollTimer) return;
         this.tick();
@@ -51,11 +63,14 @@ class RealtimeStore {
     }
 
     private async tick() {
+        const network = this.network;
         try {
             const [gas, blocks] = await Promise.all([
-                getGasPrice().catch(() => null),
-                getRecentBlocks(20).catch(() => [] as Awaited<ReturnType<typeof getRecentBlocks>>),
+                getGasPrice(network).catch(() => null),
+                getRecentBlocks(20, network).catch(() => [] as Awaited<ReturnType<typeof getRecentBlocks>>),
             ]);
+            // Network switched while this tick was in flight — discard.
+            if (network.id !== this.network.id) return;
 
             const now = Date.now();
             if (gas !== null) {

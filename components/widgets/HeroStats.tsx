@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, Box, Users, ShieldOff } from 'lucide-react';
+import { Shield, Box, Users, Hourglass, ShieldOff } from 'lucide-react';
 import type { EpochInfo } from '@/types/validator';
 import { fmtNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,15 @@ export function HeroStats({ epochInfo, blockNumber, isLoading }: HeroStatsProps)
             bg: 'bg-accent/10',
             border: 'border-accent/20',
         },
-        {
+        // v0.6 networks report pending validators; older ones keep the banned count.
+        epochInfo?.pendingValidators != null ? {
+            label: 'Pending',
+            value: epochInfo.pendingValidators,
+            icon: Hourglass,
+            color: 'text-sky-400',
+            bg: 'bg-sky-500/10',
+            border: 'border-sky-500/20',
+        } : {
             label: 'Banned',
             value: epochInfo?.bannedValidators ?? 0,
             icon: ShieldOff,

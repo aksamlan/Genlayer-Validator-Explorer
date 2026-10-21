@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Activity } from 'lucide-react';
 import { getLatestBlockNumber } from '@/lib/explorer-rpc';
 import { cn } from '@/lib/utils';
+import { useNetwork } from '@/lib/network-context';
 
 const POLL_MS = 10_000;
 
@@ -15,6 +16,7 @@ interface Probe {
 }
 
 export function NetworkHealth() {
+    const { network } = useNetwork();
     const [probe, setProbe] = useState<Probe | null>(null);
 
     useEffect(() => {
@@ -22,7 +24,7 @@ export function NetworkHealth() {
         const tick = async () => {
             const start = performance.now();
             try {
-                const block = await getLatestBlockNumber();
+                const block = await getLatestBlockNumber(network);
                 if (!cancelled) setProbe({ block, latencyMs: performance.now() - start, ok: true });
             } catch {
                 if (!cancelled) setProbe({ block: null, latencyMs: performance.now() - start, ok: false });
@@ -31,7 +33,8 @@ export function NetworkHealth() {
         tick();
         const id = setInterval(tick, POLL_MS);
         return () => { cancelled = true; clearInterval(id); };
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [network.id]);
 
     const status = !probe ? 'measuring' :
         !probe.ok ? 'down' :

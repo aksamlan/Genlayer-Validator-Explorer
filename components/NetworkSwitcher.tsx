@@ -69,7 +69,15 @@ export function NetworkSwitcher() {
                                 )}
                             >
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-black uppercase tracking-wider">{n.name}</p>
+                                    <p className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                                        {n.name}
+                                        {n.phase && (
+                                            <span className="text-[8px] px-1 py-px rounded bg-primary/15 text-primary normal-case tracking-normal">{n.phase}</span>
+                                        )}
+                                        {n.status === 'sunset' && (
+                                            <span className="text-[8px] px-1 py-px rounded bg-white/10 text-muted-foreground normal-case tracking-normal">Sunset</span>
+                                        )}
+                                    </p>
                                     <p className="text-[10px] text-muted-foreground/70 font-medium normal-case tracking-normal truncate">
                                         {n.fullName} · Chain {n.displayChainId}
                                     </p>

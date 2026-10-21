@@ -20,8 +20,11 @@ import { useToast } from '@/components/Toaster';
 import { cn, truncateAddress } from '@/lib/utils';
 import type { Address } from 'viem';
 import type { ValidatorInfo } from '@/types/validator';
+import { useNetwork } from '@/lib/network-context';
+import { ValidatorStatusBadge } from '@/components/ValidatorStatusBadge';
 
 export default function AddressPage() {
+    const { network } = useNetwork();
     const params = useParams<{ address: string }>();
     const addr = params?.address?.toLowerCase() as Address | undefined;
     const toast = useToast();
@@ -38,9 +41,9 @@ export default function AddressPage() {
         (async () => {
             try {
                 const [bal, count, c] = await Promise.all([
-                    getAddressBalance(addr),
-                    getAddressTxCount(addr),
-                    getAddressCode(addr),
+                    getAddressBalance(addr, network),
+                    getAddressTxCount(addr, network),
+                    getAddressCode(addr, network),
                 ]);
                 if (cancelled) return;
                 setBalance(bal);
@@ -49,7 +52,7 @@ export default function AddressPage() {
 
                 // Best-effort validator lookup
                 try {
-                    const stats = await validatorService.getNetworkStats();
+                    const stats = await validatorService.getNetworkStats(network);
                     const v = stats.validators.find(x => x.address.toLowerCase() === addr.toLowerCase());
                     if (!cancelled && v) setValidatorInfo(v);
                 } catch { /* ignore */ }
@@ -60,7 +63,7 @@ export default function AddressPage() {
             }
         })();
         return () => { cancelled = true; };
-    }, [addr]);
+    }, [addr, network.id]);
 
     if (!addr) {
         return (
@@ -92,14 +95,7 @@ export default function AddressPage() {
                             {isContract ? 'Contract' : validatorInfo ? 'Validator' : 'Address'}
                         </p>
                         {validatorInfo && (
-                            <Badge className={cn(
-                                "text-[9px] tracking-widest font-black",
-                                validatorInfo.isBanned ? "bg-destructive/20 text-destructive border-destructive/30" :
-                                validatorInfo.isActive ? "bg-primary/15 text-primary border-primary/30" :
-                                "bg-muted text-muted-foreground"
-                            )}>
-                                {validatorInfo.isBanned ? 'BANNED' : validatorInfo.isActive ? 'ACTIVE' : 'INACTIVE'}
-                            </Badge>
+                            <ValidatorStatusBadge validator={validatorInfo} />
                         )}
                         {isOwner && (
                             <Badge className="bg-accent/20 text-accent border-accent/30 text-[9px] tracking-widest font-black">

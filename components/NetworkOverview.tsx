@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { EpochInfo } from "@/types/validator";
 import { Shield, Users, ShieldOff, Layers, Hash, Coins } from "lucide-react";
 import { cn, formatNumber } from "@/lib/utils";
+import { fmtGen } from "@/lib/format";
 
 interface NetworkOverviewProps {
     epochInfo: EpochInfo | null;
@@ -56,7 +57,7 @@ export function NetworkOverview({ epochInfo, isLoading, metrics }: NetworkOvervi
         {
             title: "Min Stake",
             value: epochInfo?.validatorMinStake && epochInfo.validatorMinStake !== '0'
-                ? `${formatNumber(Number(BigInt(epochInfo.validatorMinStake) / BigInt(1e18)))} GEN`
+                ? `${fmtGen(epochInfo.validatorMinStake)} GEN`
                 : '---',
             icon: Coins,
             color: "text-accent",
