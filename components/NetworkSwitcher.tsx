@@ -24,15 +24,21 @@ export function NetworkSwitcher() {
         };
     }, [open]);
 
+    // With a single network there is nothing to switch to: show it as a label.
+    const switchable = networks.length > 1;
+
     return (
         <div ref={ref} className="relative flex-shrink-0">
             <button
-                onClick={() => setOpen(v => !v)}
-                aria-haspopup="listbox"
-                aria-expanded={open}
+                onClick={() => switchable && setOpen(v => !v)}
+                disabled={!switchable}
+                aria-haspopup={switchable ? "listbox" : undefined}
+                aria-expanded={switchable ? open : undefined}
+                title={network.fullName}
                 className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
-                    "bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/30",
+                    "bg-white/5 border border-white/10",
+                    switchable ? "hover:bg-white/10 hover:border-primary/30" : "cursor-default",
                     open && "bg-primary/15 border-primary/30 text-primary"
                 )}
             >
@@ -42,10 +48,10 @@ export function NetworkSwitcher() {
                 </span>
                 <Globe className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{network.name}</span>
-                <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+                {switchable && <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />}
             </button>
 
-            {open && (
+            {switchable && open && (
                 <div
                     role="listbox"
                     className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 bg-background/95 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.5)] overflow-hidden z-50 p-1.5"

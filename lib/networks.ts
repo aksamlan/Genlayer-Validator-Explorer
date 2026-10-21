@@ -102,8 +102,14 @@ export const BRADBURY_NETWORK: NetworkConfig = {
 
 // ── Registry ────────────────────────────────────────────────────────────────
 
-// Bradbury is the only active testnet; Asimov stays selectable for its history.
-export const NETWORKS: NetworkConfig[] = [BRADBURY_NETWORK, ASIMOV_NETWORK];
+// Bradbury is the only active testnet. Asimov is sunset and hidden; its config
+// is kept so it can come back by setting NEXT_PUBLIC_ENABLE_ASIMOV=true.
+// Visitors with Asimov saved in localStorage fall back to the default.
+const ASIMOV_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ASIMOV === 'true';
+
+export const NETWORKS: NetworkConfig[] = ASIMOV_ENABLED
+    ? [BRADBURY_NETWORK, ASIMOV_NETWORK]
+    : [BRADBURY_NETWORK];
 export const DEFAULT_NETWORK = BRADBURY_NETWORK;
 
 export function getNetworkById(id: string | null | undefined): NetworkConfig {

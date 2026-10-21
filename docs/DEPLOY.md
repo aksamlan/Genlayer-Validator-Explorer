@@ -30,11 +30,12 @@ In the Vercel project's **Settings → Environment Variables**, add:
 | `NEXT_PUBLIC_BRADBURY_RPC_URL` | *(blank)* | Optional — Bradbury RPC override (default `https://rpc.testnet-chain.genlayer.com`) |
 | `NEXT_PUBLIC_BRADBURY_EVM_RPC_URL` | *(blank)* | Optional — Bradbury EVM/staking RPC override (same default) |
 | `NEXT_PUBLIC_BRADBURY_EXPLORER_URL` | *(blank)* | Optional — external block-explorer link (default `https://scan.testnet-chain.genlayer.com`) |
+| `NEXT_PUBLIC_ENABLE_ASIMOV` | *(blank)* | Optional — `true` shows the sunset Asimov testnet in the switcher |
 | `NEXT_PUBLIC_GENLAYER_RPC_URL` | `https://rally-testnet.genlayer.com/api` | Asimov (sunset) JSON-RPC |
 | `NEXT_PUBLIC_EVM_RPC_URL` | `https://zksync-os-testnet-genlayer.zksync.dev` | Asimov (sunset) staking layer |
 | `NEXT_PUBLIC_OWNER_VALIDATOR` | `0xYourValidatorAddress` | Optional — enables My Node card on Asimov |
 
-The header network switcher toggles between **Bradbury** (default) and the sunset **Asimov** testnet at runtime. Bradbury does not fall back to the Asimov RPC variables — it runs on its own chain.
+Only **Bradbury** is shown by default. The sunset **Asimov** testnet is hidden; set `NEXT_PUBLIC_ENABLE_ASIMOV=true` and redeploy to bring it back in the header switcher. Bradbury does not fall back to the Asimov RPC variables — it runs on its own chain.
 
 Apply each variable to the **Production**, **Preview**, and **Development** environments.
 

@@ -2,7 +2,7 @@
 
 ![GenLayer Explorer Screenshot](public/logo.jpg)
 
-A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (Phase 2)** — blocks, transactions, validators, and addresses in one place. The sunset Asimov testnet stays selectable from the header for its history.
+A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (Phase 2)** — blocks, transactions, validators, and addresses in one place. The sunset Asimov testnet is hidden but can be re-enabled with `NEXT_PUBLIC_ENABLE_ASIMOV=true`.
 
 ## 🚀 Features
 
@@ -33,7 +33,7 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
 *   **Recent blocks / recent transactions** widgets.
 
 ### Multi-Network
-*   **Runtime network switcher** in the header — **Bradbury Phase 2** (default) and the sunset **Asimov** testnet, live, no rebuild required.
+*   **Runtime network switcher** in the header — **Bradbury Phase 2** only by default; set `NEXT_PUBLIC_ENABLE_ASIMOV=true` to bring back the sunset **Asimov** testnet as a second option.
 *   **Per-network selection is persisted** to `localStorage`, so your choice sticks across reloads.
 *   Every surface (hero branding, chain id, explorer link, blocks, transactions, gas, validator registry, "My Node") follows the selected network — each network has its own chain, staking contract and validator set.
 *   RPC calls are capped at 4 in flight per endpoint and retried on HTTP 429, since the Bradbury public RPC rate-limits bursts.
@@ -78,7 +78,8 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
     NEXT_PUBLIC_BRADBURY_EVM_RPC_URL=
     NEXT_PUBLIC_BRADBURY_EXPLORER_URL=
 
-    # Asimov (sunset)
+    # Asimov (sunset, hidden) — only used with NEXT_PUBLIC_ENABLE_ASIMOV=true
+    NEXT_PUBLIC_ENABLE_ASIMOV=
     NEXT_PUBLIC_GENLAYER_RPC_URL=https://rally-testnet.genlayer.com/api
     NEXT_PUBLIC_EVM_RPC_URL=https://zksync-os-testnet-genlayer.zksync.dev
 
@@ -110,7 +111,7 @@ If you run a validator and want the most out of the explorer:
 │   └── globals.css       # Global styles with Tailwind directives
 ├── components/           # Reusable UI components
 │   ├── NetworkOverview.tsx  # Network statistics cards
-│   ├── NetworkSwitcher.tsx  # Header Bradbury/Asimov toggle
+│   ├── NetworkSwitcher.tsx  # Header network switcher (label when only one network)
 │   ├── ValidatorTable.tsx   # Searchable validator list
 │   ├── LinksSection.tsx     # Official resources & referral links
 │   └── ...
@@ -118,7 +119,7 @@ If you run a validator and want the most out of the explorer:
 │   ├── viem-client.ts       # Staking contract reads (v0.5 + v0.6 ABIs)
 │   ├── explorer-rpc.ts      # Blocks / txs / addresses for the selected network
 │   ├── rpc-transport.ts     # Rate-limit-friendly viem transport
-│   ├── networks.ts          # Bradbury + Asimov network registry
+│   ├── networks.ts          # Network registry (Bradbury; Asimov behind a flag)
 │   └── network-context.tsx  # NetworkProvider + useNetwork() hook
 └── public/               # Static assets (logos, icons)
 ```
