@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from '@/components/SectionHeader';
-import { validatorService } from '@/lib/validator-service';
+import { fetchNetworkStats } from '@/lib/stats-client';
 import { useNetwork } from '@/lib/network-context';
 import { getAddressBalance, getAddressTxCount } from '@/lib/explorer-rpc';
 import { isOwnerValidator } from '@/lib/my-node';
@@ -43,7 +43,7 @@ export default function ValidatorDetailPage() {
         (async () => {
             try {
                 const [stats, bal, tx] = await Promise.all([
-                    validatorService.getNetworkStats(network),
+                    fetchNetworkStats(network),
                     getAddressBalance(addr, network).catch(() => null),
                     getAddressTxCount(addr, network).catch(() => null),
                 ]);

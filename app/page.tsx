@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { validatorService } from '@/lib/validator-service';
+import { fetchNetworkStats } from '@/lib/stats-client';
 import { NetworkConfig } from '@/lib/networks';
 import { useNetwork } from '@/lib/network-context';
 import type { NetworkStats } from '@/types/validator';
@@ -39,7 +39,7 @@ export default function Home() {
 
     const fetchData = async (network: NetworkConfig = currentNetwork) => {
         try {
-            const stats = await validatorService.getNetworkStats(network);
+            const stats = await fetchNetworkStats(network);
             if (activeNetworkId.current !== network.id) return;
             setNetworkStats(stats);
             try {

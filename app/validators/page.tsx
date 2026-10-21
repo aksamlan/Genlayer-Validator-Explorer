@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { validatorService } from '@/lib/validator-service';
+import { fetchNetworkStats } from '@/lib/stats-client';
 import { useNetwork } from '@/lib/network-context';
 import type { NetworkStats } from '@/types/validator';
 import { ValidatorTable } from '@/components/ValidatorTable';
@@ -22,7 +22,7 @@ export default function ValidatorsPage() {
         const tick = async () => {
             try {
                 const [s, b] = await Promise.all([
-                    validatorService.getNetworkStats(network),
+                    fetchNetworkStats(network),
                     getLatestBlockNumber(network).catch(() => null),
                 ]);
                 if (cancelled) return;

@@ -62,14 +62,44 @@ export async function rpcCall<T = unknown>(
 
 type Net = NetworkConfig;
 
+// Several widgets poll the same head and the same recent blocks. Mined blocks
+// never change, so they are fetched once per page session; the head number is
+// shared for a couple of seconds. Both also merge concurrent identical requests.
+const HEAD_TTL_MS = 2_000;
+const MAX_CACHED_BLOCKS = 500;
+
+const headCache = new Map<string, { at: number; value: Promise<bigint> }>();
+const blockCache = new Map<string, Promise<any>>();
+
+function cachedBlock<T>(key: string, load: () => Promise<T>): Promise<T> {
+    const hit = blockCache.get(key);
+    if (hit) return hit;
+    const p = load();
+    blockCache.set(key, p);
+    p.catch(() => blockCache.delete(key)); // don't keep failures
+    if (blockCache.size > MAX_CACHED_BLOCKS) {
+        blockCache.delete(blockCache.keys().next().value!); // oldest first
+    }
+    return p;
+}
+
 export async function getLatestBlockNumber(network: Net = DEFAULT_NETWORK): Promise<bigint> {
-    return getSettlementClient(network).getBlockNumber();
+    const hit = headCache.get(network.id);
+    if (hit && Date.now() - hit.at < HEAD_TTL_MS) return hit.value;
+    const value = getSettlementClient(network).getBlockNumber();
+    headCache.set(network.id, { at: Date.now(), value });
+    value.catch(() => headCache.delete(network.id));
+    return value;
 }
 
 export async function getBlock(numberOrHash: bigint | Hash, network: Net = DEFAULT_NETWORK): Promise<Block> {
     const client = getSettlementClient(network);
     if (typeof numberOrHash === 'bigint') {
-        return client.getBlock({ blockNumber: numberOrHash, includeTransactions: false });
+        // A block already fetched with its transactions has the header too.
+        const full = blockCache.get(`${network.id}:${numberOrHash}:full`);
+        if (full) return full;
+        return cachedBlock(`${network.id}:${numberOrHash}:head`, () =>
+            client.getBlock({ blockNumber: numberOrHash, includeTransactions: false }));
     }
     return client.getBlock({ blockHash: numberOrHash, includeTransactions: false });
 }
@@ -77,7 +107,8 @@ export async function getBlock(numberOrHash: bigint | Hash, network: Net = DEFAU
 export async function getBlockWithTransactions(numberOrHash: bigint | Hash, network: Net = DEFAULT_NETWORK) {
     const client = getSettlementClient(network);
     if (typeof numberOrHash === 'bigint') {
-        return client.getBlock({ blockNumber: numberOrHash, includeTransactions: true });
+        return cachedBlock(`${network.id}:${numberOrHash}:full`, () =>
+            client.getBlock({ blockNumber: numberOrHash, includeTransactions: true }));
     }
     return client.getBlock({ blockHash: numberOrHash, includeTransactions: true });
 }

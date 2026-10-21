@@ -13,7 +13,7 @@ import {
     getAddressCode,
     getAddressTxCount,
 } from '@/lib/explorer-rpc';
-import { validatorService } from '@/lib/validator-service';
+import { fetchNetworkStats } from '@/lib/stats-client';
 import { fmtEther, fmtNumber } from '@/lib/format';
 import { isOwnerValidator } from '@/lib/my-node';
 import { useToast } from '@/components/Toaster';
@@ -52,7 +52,7 @@ export default function AddressPage() {
 
                 // Best-effort validator lookup
                 try {
-                    const stats = await validatorService.getNetworkStats(network);
+                    const stats = await fetchNetworkStats(network);
                     const v = stats.validators.find(x => x.address.toLowerCase() === addr.toLowerCase());
                     if (!cancelled && v) setValidatorInfo(v);
                 } catch { /* ignore */ }
