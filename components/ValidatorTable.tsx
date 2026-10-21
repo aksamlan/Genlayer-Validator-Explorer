@@ -272,9 +272,28 @@ export function ValidatorTable({ validators, isLoading, tokenSymbol = 'GEN' }: V
                                                         </div>
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5">
-                                                                <p className="text-sm font-bold truncate max-w-[180px] group-hover:text-primary transition-colors">
+                                                                <p className={cn(
+                                                                    "text-sm font-bold truncate max-w-[180px] group-hover:text-primary transition-colors",
+                                                                    validator.identitySource === 'none' && "font-mono text-muted-foreground"
+                                                                )}>
                                                                     {validator.moniker || truncateAddress(validator.address)}
                                                                 </p>
+                                                                {validator.identitySource === 'legacy' && (
+                                                                    <span
+                                                                        className="text-[8px] font-black uppercase tracking-wider px-1 py-px rounded bg-white/5 text-muted-foreground border border-white/10 flex-shrink-0"
+                                                                        title={`Name from ${validator.identityNetwork ?? 'an earlier testnet'} (same operator wallet). Not set on this network yet.`}
+                                                                    >
+                                                                        prev
+                                                                    </span>
+                                                                )}
+                                                                {validator.identitySource === 'none' && (
+                                                                    <span
+                                                                        className="text-[8px] font-black uppercase tracking-wider px-1 py-px rounded bg-white/5 text-muted-foreground/70 border border-white/10 flex-shrink-0"
+                                                                        title="This validator hasn't set an on-chain identity yet."
+                                                                    >
+                                                                        no identity
+                                                                    </span>
+                                                                )}
                                                                 {isOwnerValidator(validator.address) && (
                                                                     <Crown className="h-3 w-3 text-accent flex-shrink-0" />
                                                                 )}

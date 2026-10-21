@@ -16,6 +16,7 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
 *   **Validator registry** (`/validators`) with search, filtering, and per-validator drilldown.
 *   **Validator profile pages** (`/validator/[address]`) — identity card, stake breakdown, pending ops, on-chain details.
 *   **"My Node" highlight** — set `NEXT_PUBLIC_OWNER_VALIDATOR` to feature your own validator on the dashboard with a crown badge, status, unclaimed-rewards flag and share of network stake.
+*   **Identity fallback** — validators that haven't set an identity on Bradbury Phase 2 yet show the name they used on an earlier testnet (matched by operator/owner wallet, marked `prev`). Snapshot: `lib/legacy-identities.json`, regenerate with `npx tsx scripts/snapshot-legacy-identities.ts`.
 *   **Validator statuses** — Active, Pending (staked, joins the set next epoch), Quarantined, Banned, Inactive — with filter tabs in the registry.
 
 ### Staking Overview (v0.6 contracts)

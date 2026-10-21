@@ -152,6 +152,18 @@ export default function ValidatorDetailPage() {
                                     </p>
                                 )}
 
+                                {validator.identitySource === 'legacy' && (
+                                    <p className="text-[11px] text-muted-foreground/80 max-w-2xl">
+                                        Name and profile from {validator.identityNetwork ?? 'an earlier testnet'}, matched by
+                                        the same operator wallet. This validator hasn&apos;t set its identity on this network yet.
+                                    </p>
+                                )}
+                                {validator.identitySource === 'none' && (
+                                    <p className="text-[11px] text-muted-foreground/80 max-w-2xl">
+                                        This validator hasn&apos;t set an on-chain identity (name, logo, links) on this network yet.
+                                    </p>
+                                )}
+
                                 <div className="flex items-center gap-2 pt-1">
                                     <code className="font-mono text-xs text-muted-foreground break-all">{validator.address}</code>
                                     <button onClick={() => copy(validator.address, 'Validator address')} className="text-muted-foreground hover:text-primary flex-shrink-0">

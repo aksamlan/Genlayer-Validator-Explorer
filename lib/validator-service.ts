@@ -12,6 +12,7 @@ import {
     type ValidatorReadContext,
 } from './viem-client';
 import type { Address } from 'viem';
+import { findLegacyIdentity } from './legacy-identity';
 
 export class ValidatorService {
     private static instance: ValidatorService;
@@ -60,11 +61,21 @@ export class ValidatorService {
         try {
             const contractInfo = await getValidatorContractInfo(address, network, activeAddresses, ctx);
 
+            // Identities weren't carried over to v0.6 networks; until an operator
+            // sets one again, show the one they used on an earlier testnet.
+            const hasOnchainIdentity = !!contractInfo.moniker;
+            const legacy = !hasOnchainIdentity && network.stakingVersion === 'v0.6'
+                ? findLegacyIdentity(contractInfo.operator, contractInfo.owner)
+                : null;
+            const id = legacy ?? contractInfo;
+
             return {
-                moniker: contractInfo.moniker || truncateAddress(address),
+                moniker: id.moniker || truncateAddress(address),
                 address: address,
-                identity: contractInfo.website || '',
-                logoUri: contractInfo.logoUri || undefined,
+                identity: id.website || '',
+                logoUri: id.logoUri || undefined,
+                identitySource: hasOnchainIdentity ? 'onchain' : legacy ? 'legacy' : 'none',
+                identityNetwork: legacy?.network,
                 stake: contractInfo.stake.toString(),
                 selfStake: contractInfo.selfStake.toString(),
                 delegatedStake: contractInfo.delegatedStake.toString(),
@@ -80,11 +91,11 @@ export class ValidatorService {
                 primedEpoch: contractInfo.primedEpoch.toString(),
                 pendingDeposits: contractInfo.deposit.toString(),
                 pendingWithdrawals: contractInfo.withdrawal.toString(),
-                description: contractInfo.description,
-                email: contractInfo.email,
-                twitter: contractInfo.twitter,
-                telegram: contractInfo.telegram,
-                github: contractInfo.github,
+                description: id.description,
+                email: id.email,
+                twitter: id.twitter,
+                telegram: id.telegram,
+                github: id.github,
                 operator: contractInfo.operator,
                 owner: contractInfo.owner,
                 leftNode: contractInfo.leftNode,

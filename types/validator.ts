@@ -3,6 +3,10 @@ export interface ValidatorInfo {
     moniker: string;
     identity: string;     // website (kept for backwards compat)
     logoUri?: string;
+    // Where moniker/logo/socials came from: set on this network, carried from
+    // an earlier testnet (matched by operator/owner wallet), or not set at all.
+    identitySource?: 'onchain' | 'legacy' | 'none';
+    identityNetwork?: string; // e.g. "Bradbury Phase 1" when identitySource is 'legacy'
 
     // Status
     isActive: boolean;

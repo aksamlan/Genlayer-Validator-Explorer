@@ -10,10 +10,14 @@ import { http, type HttpTransport } from 'viem';
  */
 
 const MAX_IN_FLIGHT = 4;
+// After any 429, hold every request to that URL briefly so the limiter can
+// refill, instead of the other in-flight calls burning their retries too.
+const COOLDOWN_MS = 1_000;
 
 interface Gate {
     active: number;
     queue: Array<() => void>;
+    pausedUntil: number;
 }
 
 const gates = new Map<string, Gate>();
@@ -21,7 +25,7 @@ const gates = new Map<string, Gate>();
 function gateFor(url: string): Gate {
     let g = gates.get(url);
     if (!g) {
-        g = { active: 0, queue: [] };
+        g = { active: 0, queue: [], pausedUntil: 0 };
         gates.set(url, g);
     }
     return g;
@@ -30,9 +34,11 @@ function gateFor(url: string): Gate {
 async function acquire(g: Gate) {
     if (g.active < MAX_IN_FLIGHT) {
         g.active++;
-        return;
+    } else {
+        await new Promise<void>(resolve => g.queue.push(resolve));
     }
-    await new Promise<void>(resolve => g.queue.push(resolve));
+    const wait = g.pausedUntil - Date.now();
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
 }
 
 function release(g: Gate) {
@@ -45,12 +51,14 @@ export function throttledHttp(url: string, opts: { timeout?: number } = {}): Htt
     const gate = gateFor(url);
     return http(url, {
         timeout: opts.timeout ?? 30_000,
-        retryCount: 4,
+        retryCount: 6,
         retryDelay: 400, // viem backs off exponentially from this
         fetchFn: async (input, init) => {
             await acquire(gate);
             try {
-                return await fetch(input, init);
+                const res = await fetch(input, init);
+                if (res.status === 429) gate.pausedUntil = Date.now() + COOLDOWN_MS;
+                return res;
             } finally {
                 release(gate);
             }

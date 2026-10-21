@@ -282,18 +282,22 @@ function readWalletCached(network: NetworkConfig, validatorAddress: Address): Pr
     if (hit && Date.now() - hit.at < WALLET_TTL_MS) return hit.value;
 
     const client = getViemClient(network);
+    // Track real failures (e.g. 429 after retries) separately from an identity
+    // that is simply empty: an empty result may be cached, a failed one must not
+    // be, or the validator would show as unnamed for the whole TTL.
+    let failed = false;
+    const soft = <T,>(p: Promise<T>, fallback: T) => p.catch(() => { failed = true; return fallback; });
     const value = Promise.all([
-        client.readContract({ address: validatorAddress, abi: VALIDATOR_WALLET_ABI, functionName: 'getIdentity' }).catch(() => null),
-        client.readContract({ address: validatorAddress, abi: VALIDATOR_WALLET_ABI, functionName: 'operator' }).catch(() => ''),
-        client.readContract({ address: validatorAddress, abi: VALIDATOR_WALLET_ABI, functionName: 'owner' }).catch(() => ''),
+        soft(client.readContract({ address: validatorAddress, abi: VALIDATOR_WALLET_ABI, functionName: 'getIdentity' }), null),
+        soft(client.readContract({ address: validatorAddress, abi: VALIDATOR_WALLET_ABI, functionName: 'operator' }), ''),
+        soft(client.readContract({ address: validatorAddress, abi: VALIDATOR_WALLET_ABI, functionName: 'owner' }), ''),
     ]).then(([identity, operator, owner]) => ({
         identity,
         operator: String(operator).toLowerCase(),
         owner: String(owner).toLowerCase(),
     }));
     walletCache.set(key, { at: Date.now(), value });
-    // Don't keep a failed lookup around for the full TTL.
-    value.then(w => { if (!w.identity && !w.owner) walletCache.delete(key); });
+    value.then(() => { if (failed) walletCache.delete(key); });
     return value;
 }
 
