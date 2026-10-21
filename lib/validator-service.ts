@@ -142,7 +142,9 @@ export class ValidatorService {
             getEpochNumber(network),
             getValidatorMinStake(network),
             this.getActiveValidators(network),
-            this.getAllValidators(network),
+            // Not the error-swallowing getAllValidators(): if the registry can't
+            // be read, fail loudly rather than report (and cache) zero validators.
+            getAllValidatorAddresses(network),
             getEpochDetails(network),
         ]);
 

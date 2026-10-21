@@ -58,7 +58,16 @@ export async function GET(req: Request) {
         return NextResponse.json(stats, {
             headers: { 'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=120' },
         });
-    } catch (e) {
-        return NextResponse.json({ error: e instanceof Error ? e.message : 'failed' }, { status: 502 });
+    } catch (e: any) {
+        // Keep the RPC's reason (status line / details) so failures can be
+        // diagnosed from the response; never let the CDN cache an error.
+        const message = String(e?.message ?? 'failed');
+        const reason = [e?.shortMessage, ...message.split('\n').filter(l => /Status:|Details:/.test(l))]
+            .filter(Boolean).join(' | ').slice(0, 400);
+        console.error('[api/stats] refresh failed:', message);
+        return NextResponse.json(
+            { error: reason || message.slice(0, 400) },
+            { status: 502, headers: { 'Cache-Control': 'no-store' } },
+        );
     }
 }
