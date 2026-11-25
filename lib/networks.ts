@@ -62,7 +62,7 @@ export const ASIMOV_NETWORK: NetworkConfig = {
 export const RALLY_NETWORK = ASIMOV_NETWORK;
 
 // ── Bradbury ────────────────────────────────────────────────────────────────
-// Phase 2 runs on its own chain, so it no longer falls back to the Asimov
+// Bradbury runs on its own chain, so it does not fall back to the Asimov
 // RPC env vars — only the BRADBURY_* overrides apply.
 
 const BRADBURY_RPC_URL =
@@ -77,7 +77,7 @@ export const BRADBURY_NETWORK: NetworkConfig = {
     id: 'bradbury-testnet',
     name: 'Bradbury',
     fullName: 'GenLayer Bradbury Testnet',
-    tagline: 'Real-time block, transaction, and validator explorer for GenLayer Testnet Bradbury — Phase 2.',
+    tagline: 'Real-time block, transaction, and validator explorer for GenLayer Testnet Bradbury — Phase 3.',
     rpcUrl: BRADBURY_RPC_URL,
     evmRpcUrl: BRADBURY_EVM_RPC_URL,
     tokenSymbol: 'GEN',
@@ -86,7 +86,7 @@ export const BRADBURY_NETWORK: NetworkConfig = {
     explorerLabel: 'Bradbury Testnet Explorer',
     stakingVersion: 'v0.6',
     status: 'active',
-    phase: 'Phase 2',
+    phase: 'Phase 3',
     chainConfig: {
         stakingContract: {
             address: BRADBURY_CONFIG.stakingContractAddress,

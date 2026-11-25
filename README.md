@@ -2,7 +2,7 @@
 
 ![GenLayer Explorer Screenshot](public/logo.jpg)
 
-A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (Phase 2)** — blocks, transactions, validators, and addresses in one place. The sunset Asimov testnet is hidden but can be re-enabled with `NEXT_PUBLIC_ENABLE_ASIMOV=true`.
+A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (Phase 3)** — blocks, transactions, validators, and addresses in one place. The sunset Asimov testnet is hidden but can be re-enabled with `NEXT_PUBLIC_ENABLE_ASIMOV=true`.
 
 ## 🚀 Features
 
@@ -16,7 +16,7 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
 *   **Validator registry** (`/validators`) with search, filtering, and per-validator drilldown.
 *   **Validator profile pages** (`/validator/[address]`) — identity card, stake breakdown, pending ops, on-chain details.
 *   **"My Node" highlight** — set `NEXT_PUBLIC_OWNER_VALIDATOR` to feature your own validator on the dashboard with a crown badge, status, unclaimed-rewards flag and share of network stake.
-*   **Identity fallback** — validators that haven't set an identity on Bradbury Phase 2 yet show the name they used on an earlier testnet (matched by operator/owner wallet, marked `prev`). Snapshot: `lib/legacy-identities.json`, regenerate with `npx tsx scripts/snapshot-legacy-identities.ts`.
+*   **Identity fallback** — validators that haven't set an identity on Bradbury Phase 3 yet show the name they used on an earlier testnet (matched by operator/owner wallet, marked `prev`). Snapshot: `lib/legacy-identities.json`, regenerate with `npx tsx scripts/snapshot-legacy-identities.ts`.
 *   **Validator statuses** — Active, Pending (staked, joins the set next epoch), Quarantined, Banned, Inactive — with filter tabs in the registry.
 
 ### Staking Overview (v0.6 contracts)
@@ -34,7 +34,7 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
 *   **Recent blocks / recent transactions** widgets.
 
 ### Multi-Network
-*   **Runtime network switcher** in the header — **Bradbury Phase 2** only by default; set `NEXT_PUBLIC_ENABLE_ASIMOV=true` to bring back the sunset **Asimov** testnet as a second option.
+*   **Runtime network switcher** in the header — **Bradbury Phase 3** only by default; set `NEXT_PUBLIC_ENABLE_ASIMOV=true` to bring back the sunset **Asimov** testnet as a second option.
 *   **Per-network selection is persisted** to `localStorage`, so your choice sticks across reloads.
 *   Every surface (hero branding, chain id, explorer link, blocks, transactions, gas, validator registry, "My Node") follows the selected network — each network has its own chain, staking contract and validator set.
 *   RPC calls are capped at 4 in flight per endpoint and retried on HTTP 429, since the Bradbury public RPC rate-limits bursts.
@@ -73,7 +73,7 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
 
 3.  Configure your environment in `.env.local`:
     ```bash
-    # Bradbury Phase 2 (default network) — optional overrides; the built-in
+    # Bradbury Phase 3 (default network) — optional overrides; the built-in
     # defaults in config/genlayer.ts point at https://rpc.testnet-chain.genlayer.com
     NEXT_PUBLIC_BRADBURY_RPC_URL=
     NEXT_PUBLIC_BRADBURY_EVM_RPC_URL=

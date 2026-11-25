@@ -32,7 +32,7 @@ export function fmtEther(weiBig: bigint, decimals = 4): string {
 
 /**
  * GEN amount from wei, keeping sub-1 values readable (min stake is 0.01 GEN on
- * Bradbury Phase 2, which integer division would show as 0).
+ * Bradbury Phase 2+, which integer division would show as 0).
  */
 export function fmtGen(wei: bigint | string | null | undefined, compact = false): string {
     if (wei == null || wei === '') return '—';

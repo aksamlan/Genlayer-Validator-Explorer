@@ -3,7 +3,7 @@ import { http, type HttpTransport } from 'viem';
 /**
  * viem HTTP transport that caps in-flight requests per RPC URL.
  *
- * The Bradbury Phase 2 public RPC rate-limits bursts (more than ~7 concurrent
+ * The Bradbury public RPC rate-limits bursts (more than ~7 concurrent
  * calls start returning 429 / -32017), while steady traffic is fine. A
  * validator-list refresh fans out dozens of eth_calls at once, so requests are
  * queued here and 429s are retried with backoff by viem.

@@ -15,20 +15,21 @@ const RALLY_TESTNET = {
 
 export const GENLAYER_CONFIG = {
     rallyTestnet: RALLY_TESTNET,
-    // Testnet Bradbury, Phase 2 (node network name bradbury-phase2, node v0.6).
-    // A fresh chain: Phase 1 validators/stake were not carried over. One RPC
-    // serves both the GenLayer and EVM methods, so blocks, txs and staking reads
-    // all go through it. Contracts: genlayer-consensus deployments/bradbury-phase-2.json
+    // Testnet Bradbury, Phase 3 (node network name bradbury-phase3, node v0.6.1,
+    // v0.6 consensus contracts). A new deployment on the same chain as Phase 2:
+    // validators and stake were not carried over. One RPC serves both the
+    // GenLayer and EVM methods, so blocks, txs and staking reads all go through
+    // it. Addresses resolved from the AddressManager via getAddress(name).
     bradburyTestnet: {
-        networkName: 'bradbury-phase2',
+        networkName: 'bradbury-phase3',
         rpcUrl: 'https://rpc.testnet-chain.genlayer.com',
         evmRpcUrl: 'https://rpc.testnet-chain.genlayer.com',
-        stakingContractAddress: '0xD8fBa96C0dBB0257028dBc0107060b958e5c7113',
-        consensusAddress: '0x3F71AE080BD6270A91dBcc7960d88797828538E0', // AddressManager
-        validatorWalletFactoryAddress: '0x399FCBe6b442903cbA4d3B647B4b30EddF729314',
-        vestingFactoryAddress: '0x82cA5e0e7A9345CF3ED5ee68A7fba41EF2202316',
+        stakingContractAddress: '0xcE16862EAf10B97A0619BeBb662991fb4a52e346',
+        consensusAddress: '0x0192C6C9482251790965B7136352B26234d81d79', // AddressManager
+        validatorWalletFactoryAddress: '0xfE7bA48e90FeA19C955c18bBDE8BdC0810C2e6ed',
+        vestingFactoryAddress: '0x753B5DC3841F640cD93d61F26E5EAa088Da6f1B6',
         displayChainId: 4221,
-        explorerUrl: 'https://scan.testnet-chain.genlayer.com',
-        discoveryStartBlock: 0n,
+        explorerUrl: 'https://scan.bradbury.genlayer.com',
+        discoveryStartBlock: 694191n, // Phase 3 genesis block
     },
 };
