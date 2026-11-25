@@ -29,7 +29,7 @@ export function getSettlementClient(network: NetworkConfig = DEFAULT_NETWORK) {
     const url = network.evmRpcUrl || network.rpcUrl;
     if (!settlementClients[url]) {
         settlementClients[url] = createPublicClient({
-            transport: throttledHttp(url, { timeout: 20_000 }),
+            transport: throttledHttp(url, { timeout: 20_000, batch: true }),
         });
     }
     return settlementClients[url];

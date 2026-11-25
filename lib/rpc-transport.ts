@@ -3,15 +3,21 @@ import { http, type HttpTransport } from 'viem';
 /**
  * viem HTTP transport for the rate-limited public RPC.
  *
- * - Batching: calls made in the same tick go out as one JSON-RPC batch, so a
- *   page that needs ~30 blocks makes a couple of HTTP requests instead of 30
- *   queued ones.
+ * - Batching (opt-in): calls made in the same tick go out as one JSON-RPC
+ *   batch, so a page that needs ~30 blocks makes a couple of HTTP requests
+ *   instead of 30 queued ones. Only for block/tx reads: batched eth_calls
+ *   (contract reads) hit the RPC's rate limit far sooner than single ones, so
+ *   the staking/identity client keeps one call per request.
  * - In-flight cap: at most MAX_IN_FLIGHT HTTP requests per URL; bursts beyond
  *   that start returning 429.
- * - Rate-limit retry: the RPC counts every call inside a batch, and answers the
- *   ones over the limit with error -32017 inside an HTTP 200, which viem does
- *   not retry. Those items are re-sent on their own after a short pause and
- *   merged back, so callers only see a slower answer, not an error.
+ * - Call budget: the RPC rate-limits by calls, not HTTP requests (every item in
+ *   a batch counts). Measured: ~30 calls/s sustained is fine, 40/s is not. A
+ *   token bucket keeps each URL under CALLS_PER_SEC, with a small burst so a
+ *   page load's first ~30 calls still go out at once.
+ * - Rate-limit retry: items over the limit come back as error -32017 inside an
+ *   HTTP 200, which viem does not retry. Those items are re-sent on their own
+ *   after a short pause and merged back, so callers see a slower answer, not
+ *   an error.
  */
 
 const MAX_IN_FLIGHT = 4;
@@ -20,12 +26,17 @@ const BATCH_WAIT_MS = 10;
 // After any rate limit, hold every request to that URL briefly so the limiter
 // can refill, instead of the other in-flight calls burning their retries too.
 const COOLDOWN_MS = 1_000;
-const RATE_LIMIT_RETRIES = 4;
+const RATE_LIMIT_RETRIES = 6;
+const CALLS_PER_SEC = 25;
+const CALL_BURST = 50;
 
 interface Gate {
     active: number;
     queue: Array<() => void>;
     pausedUntil: number;
+    tokens: number;
+    refilledAt: number;
+    budget: Promise<void>; // serialises token waits so calls go out in order
 }
 
 const gates = new Map<string, Gate>();
@@ -33,7 +44,7 @@ const gates = new Map<string, Gate>();
 function gateFor(url: string): Gate {
     let g = gates.get(url);
     if (!g) {
-        g = { active: 0, queue: [], pausedUntil: 0 };
+        g = { active: 0, queue: [], pausedUntil: 0, tokens: CALL_BURST, refilledAt: Date.now(), budget: Promise.resolve() };
         gates.set(url, g);
     }
     return g;
@@ -49,6 +60,35 @@ async function acquire(g: Gate) {
     }
     const wait = g.pausedUntil - Date.now();
     if (wait > 0) await sleep(wait);
+}
+
+/** Waits until `calls` tokens are available, then spends them. */
+function spend(g: Gate, calls: number): Promise<void> {
+    const need = Math.min(calls, CALL_BURST);
+    const turn = g.budget.then(async () => {
+        for (;;) {
+            const now = Date.now();
+            g.tokens = Math.min(CALL_BURST, g.tokens + ((now - g.refilledAt) / 1000) * CALLS_PER_SEC);
+            g.refilledAt = now;
+            if (g.tokens >= need) {
+                g.tokens -= need;
+                return;
+            }
+            await sleep(Math.ceil(((need - g.tokens) / CALLS_PER_SEC) * 1000));
+        }
+    });
+    g.budget = turn;
+    return turn;
+}
+
+function callCount(body: unknown): number {
+    if (typeof body !== 'string') return 1;
+    try {
+        const parsed = JSON.parse(body);
+        return Array.isArray(parsed) ? parsed.length : 1;
+    } catch {
+        return 1;
+    }
 }
 
 function release(g: Gate) {
@@ -96,6 +136,7 @@ async function retryRateLimited(
         await sleep(COOLDOWN_MS * attempt);
 
         const resend = requests.filter(r => pending.includes(r.id));
+        await spend(gate, resend.length);
         const retry = await fetch(input, { ...init, body: JSON.stringify(resend) });
         if (!retry.ok) continue;
         let retried: RpcMessage[];
@@ -116,16 +157,17 @@ async function retryRateLimited(
     });
 }
 
-export function throttledHttp(url: string, opts: { timeout?: number } = {}): HttpTransport {
+export function throttledHttp(url: string, opts: { timeout?: number; batch?: boolean } = {}): HttpTransport {
     const gate = gateFor(url);
     return http(url, {
-        batch: { batchSize: BATCH_SIZE, wait: BATCH_WAIT_MS },
+        batch: opts.batch ? { batchSize: BATCH_SIZE, wait: BATCH_WAIT_MS } : false,
         timeout: opts.timeout ?? 30_000,
         retryCount: 6,
         retryDelay: 400, // viem backs off exponentially from this
         fetchFn: async (input, init = {}) => {
             await acquire(gate);
             try {
+                await spend(gate, callCount(init.body));
                 const res = await fetch(input, init);
                 if (res.status === 429) {
                     gate.pausedUntil = Date.now() + COOLDOWN_MS;
