@@ -1,18 +1,26 @@
 import { http, type HttpTransport } from 'viem';
 
 /**
- * viem HTTP transport that caps in-flight requests per RPC URL.
+ * viem HTTP transport for the rate-limited public RPC.
  *
- * The Bradbury public RPC rate-limits bursts (more than ~7 concurrent
- * calls start returning 429 / -32017), while steady traffic is fine. A
- * validator-list refresh fans out dozens of eth_calls at once, so requests are
- * queued here and 429s are retried with backoff by viem.
+ * - Batching: calls made in the same tick go out as one JSON-RPC batch, so a
+ *   page that needs ~30 blocks makes a couple of HTTP requests instead of 30
+ *   queued ones.
+ * - In-flight cap: at most MAX_IN_FLIGHT HTTP requests per URL; bursts beyond
+ *   that start returning 429.
+ * - Rate-limit retry: the RPC counts every call inside a batch, and answers the
+ *   ones over the limit with error -32017 inside an HTTP 200, which viem does
+ *   not retry. Those items are re-sent on their own after a short pause and
+ *   merged back, so callers only see a slower answer, not an error.
  */
 
 const MAX_IN_FLIGHT = 4;
-// After any 429, hold every request to that URL briefly so the limiter can
-// refill, instead of the other in-flight calls burning their retries too.
+const BATCH_SIZE = 25;
+const BATCH_WAIT_MS = 10;
+// After any rate limit, hold every request to that URL briefly so the limiter
+// can refill, instead of the other in-flight calls burning their retries too.
 const COOLDOWN_MS = 1_000;
+const RATE_LIMIT_RETRIES = 4;
 
 interface Gate {
     active: number;
@@ -31,6 +39,8 @@ function gateFor(url: string): Gate {
     return g;
 }
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 async function acquire(g: Gate) {
     if (g.active < MAX_IN_FLIGHT) {
         g.active++;
@@ -38,7 +48,7 @@ async function acquire(g: Gate) {
         await new Promise<void>(resolve => g.queue.push(resolve));
     }
     const wait = g.pausedUntil - Date.now();
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    if (wait > 0) await sleep(wait);
 }
 
 function release(g: Gate) {
@@ -47,18 +57,81 @@ function release(g: Gate) {
     else g.active--;
 }
 
+interface RpcMessage {
+    id?: unknown;
+    error?: { code?: number; message?: string };
+    [k: string]: unknown;
+}
+
+const isRateLimited = (m: RpcMessage) =>
+    !!m?.error && (m.error.code === -32017 || /rate limit/i.test(m.error.message ?? ''));
+
+/** Re-sends the rate-limited items of a JSON-RPC response and merges the answers. */
+async function retryRateLimited(
+    gate: Gate,
+    input: Parameters<typeof fetch>[0],
+    init: RequestInit,
+    res: Response,
+): Promise<Response> {
+    if (!res.ok || typeof init.body !== 'string') return res;
+
+    let sent: unknown;
+    let got: unknown;
+    try {
+        sent = JSON.parse(init.body);
+        got = await res.clone().json();
+    } catch {
+        return res;
+    }
+    const batched = Array.isArray(got);
+    const requests = (Array.isArray(sent) ? sent : [sent]) as RpcMessage[];
+    const answers = (batched ? got : [got]) as RpcMessage[];
+
+    const byId = new Map(answers.map(a => [a?.id, a]));
+    let pending = answers.filter(isRateLimited).map(a => a.id);
+    if (pending.length === 0) return res;
+
+    for (let attempt = 1; attempt <= RATE_LIMIT_RETRIES && pending.length > 0; attempt++) {
+        gate.pausedUntil = Math.max(gate.pausedUntil, Date.now() + COOLDOWN_MS);
+        await sleep(COOLDOWN_MS * attempt);
+
+        const resend = requests.filter(r => pending.includes(r.id));
+        const retry = await fetch(input, { ...init, body: JSON.stringify(resend) });
+        if (!retry.ok) continue;
+        let retried: RpcMessage[];
+        try {
+            const body = await retry.json();
+            retried = Array.isArray(body) ? body : [body];
+        } catch {
+            continue;
+        }
+        for (const a of retried) if (!isRateLimited(a)) byId.set(a.id, a);
+        pending = pending.filter(id => isRateLimited(byId.get(id) as RpcMessage));
+    }
+
+    const merged = answers.map(a => byId.get(a?.id) ?? a);
+    return new Response(JSON.stringify(batched ? merged : merged[0]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+    });
+}
+
 export function throttledHttp(url: string, opts: { timeout?: number } = {}): HttpTransport {
     const gate = gateFor(url);
     return http(url, {
+        batch: { batchSize: BATCH_SIZE, wait: BATCH_WAIT_MS },
         timeout: opts.timeout ?? 30_000,
         retryCount: 6,
         retryDelay: 400, // viem backs off exponentially from this
-        fetchFn: async (input, init) => {
+        fetchFn: async (input, init = {}) => {
             await acquire(gate);
             try {
                 const res = await fetch(input, init);
-                if (res.status === 429) gate.pausedUntil = Date.now() + COOLDOWN_MS;
-                return res;
+                if (res.status === 429) {
+                    gate.pausedUntil = Date.now() + COOLDOWN_MS;
+                    return res;
+                }
+                return await retryRateLimited(gate, input, init, res);
             } finally {
                 release(gate);
             }
