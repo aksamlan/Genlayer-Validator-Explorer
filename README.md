@@ -34,7 +34,7 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
 *   **Recent blocks / recent transactions** widgets.
 
 ### Multi-Network
-*   **Runtime network switcher** in the header — **Bradbury Phase 3** only by default; set `NEXT_PUBLIC_ENABLE_ASIMOV=true` to bring back the sunset **Asimov** testnet as a second option.
+*   **Runtime network switcher** in the header — **Bradbury Phase 3** and **Clarke** (Mainnet RC) by default; set `NEXT_PUBLIC_ENABLE_ASIMOV=true` to bring back the sunset **Asimov** testnet as a third option.
 *   **Per-network selection is persisted** to `localStorage`, so your choice sticks across reloads.
 *   Every surface (hero branding, chain id, explorer link, blocks, transactions, gas, validator registry, "My Node") follows the selected network — each network has its own chain, staking contract and validator set.
 *   RPC calls are capped at 4 in flight per endpoint and retried on HTTP 429, since the Bradbury public RPC rate-limits bursts.
@@ -87,6 +87,7 @@ A comprehensive, real-time blockchain explorer for **GenLayer Testnet Bradbury (
     # Optional: highlight your own validator on the dashboard (per network)
     NEXT_PUBLIC_OWNER_VALIDATOR=0xYourAsimovValidatorAddress
     NEXT_PUBLIC_BRADBURY_OWNER_VALIDATOR=0xYourBradburyValidatorAddress
+    NEXT_PUBLIC_CLARKE_OWNER_VALIDATOR=0xYourClarkeValidatorAddress
     ```
 
 4.  Run the development server:

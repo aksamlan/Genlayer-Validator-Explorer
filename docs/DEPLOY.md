@@ -29,6 +29,8 @@ In the Vercel project's **Settings → Environment Variables**, add:
 | `NEXT_PUBLIC_BRADBURY_OWNER_VALIDATOR` | `0xYourValidatorAddress` | Optional — enables My Node card on Bradbury (default network) |
 | `NEXT_PUBLIC_BRADBURY_RPC_URL` | *(blank)* | Optional — Bradbury RPC override (default `https://rpc.testnet-chain.genlayer.com`) |
 | `NEXT_PUBLIC_BRADBURY_EVM_RPC_URL` | *(blank)* | Optional — Bradbury EVM/staking RPC override (same default) |
+| `NEXT_PUBLIC_CLARKE_OWNER_VALIDATOR` | `0xYourValidatorAddress` | Optional — enables My Node card on Clarke |
+| `NEXT_PUBLIC_CLARKE_EXPLORER_URL` | *(blank)* | Optional — Clarke block-explorer link (default `https://scan.testnet-chain.genlayer.com`); Clarke shares Bradbury's RPC, `NEXT_PUBLIC_CLARKE_RPC_URL` / `_EVM_RPC_URL` override it |
 | `NEXT_PUBLIC_BRADBURY_EXPLORER_URL` | *(blank)* | Optional — external block-explorer link (default `https://scan.bradbury.genlayer.com`) |
 | `NEXT_PUBLIC_ENABLE_ASIMOV` | *(blank)* | Optional — `true` shows the sunset Asimov testnet in the switcher |
 | `NEXT_PUBLIC_GENLAYER_RPC_URL` | `https://rally-testnet.genlayer.com/api` | Asimov (sunset) JSON-RPC |

@@ -4,8 +4,9 @@
  *
  *   - NEXT_PUBLIC_OWNER_VALIDATOR           → default / Asimov validator
  *   - NEXT_PUBLIC_BRADBURY_OWNER_VALIDATOR  → Bradbury validator (optional)
+ *   - NEXT_PUBLIC_CLARKE_OWNER_VALIDATOR    → Clarke validator (optional)
  *
- * Pass a network id ('bradbury-testnet' | 'asimov-testnet') to pick the right
+ * Pass a network id ('bradbury-testnet' | 'clarke-testnet' | 'asimov-testnet') to pick the right
  * one for the active network; it falls back to the default when unset.
  */
 
@@ -17,15 +18,17 @@ function normalizeAddress(raw: string | undefined | null): string | null {
 
 const DEFAULT_OWNER = normalizeAddress(process.env.NEXT_PUBLIC_OWNER_VALIDATOR);
 const BRADBURY_OWNER = normalizeAddress(process.env.NEXT_PUBLIC_BRADBURY_OWNER_VALIDATOR);
+const CLARKE_OWNER = normalizeAddress(process.env.NEXT_PUBLIC_CLARKE_OWNER_VALIDATOR);
 
 export function getOwnerValidatorAddress(networkId?: string | null): string | null {
     if (networkId === 'bradbury-testnet' && BRADBURY_OWNER) return BRADBURY_OWNER;
+    if (networkId === 'clarke-testnet' && CLARKE_OWNER) return CLARKE_OWNER;
     return DEFAULT_OWNER;
 }
 
 /** All configured owner addresses across every network (deduped). */
 export function getAllOwnerValidatorAddresses(): string[] {
-    return Array.from(new Set([DEFAULT_OWNER, BRADBURY_OWNER].filter(Boolean) as string[]));
+    return Array.from(new Set([DEFAULT_OWNER, BRADBURY_OWNER, CLARKE_OWNER].filter(Boolean) as string[]));
 }
 
 /**

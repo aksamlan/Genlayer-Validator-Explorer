@@ -32,4 +32,20 @@ export const GENLAYER_CONFIG = {
         explorerUrl: 'https://scan.bradbury.genlayer.com',
         discoveryStartBlock: 694191n, // Phase 3 genesis block
     },
+    // Testnet Clarke, the Mainnet release candidate (node network name clarke,
+    // node v0.6.1). A separate deployment of the Bradbury Phase 3 contracts on
+    // the same chain, so it shares Bradbury's chain ID, RPC and GEN balances —
+    // only the contracts differ. Addresses resolved from the AddressManager.
+    clarkeTestnet: {
+        networkName: 'clarke',
+        rpcUrl: 'https://rpc.testnet-chain.genlayer.com',
+        evmRpcUrl: 'https://rpc.testnet-chain.genlayer.com',
+        stakingContractAddress: '0x711d111510Af2Bb35c3929b709677a1E9f8ffce2',
+        consensusAddress: '0xA79dA7c238905fD0F10298cD579B0733ad1B1d0E', // AddressManager
+        validatorWalletFactoryAddress: '0xB169708a4a1C14503906C4eCfA07A61E5968209E',
+        vestingFactoryAddress: '0x9Cd92364FaBD6821A0550d1D738c997CF216167C',
+        displayChainId: 4221,
+        explorerUrl: 'https://scan.testnet-chain.genlayer.com',
+        discoveryStartBlock: 0n,
+    },
 };

@@ -21,6 +21,7 @@ export interface NetworkConfig {
 
 const RALLY_CONFIG = GENLAYER_CONFIG.rallyTestnet;
 const BRADBURY_CONFIG = GENLAYER_CONFIG.bradburyTestnet;
+const CLARKE_CONFIG = GENLAYER_CONFIG.clarkeTestnet;
 
 // ── Asimov / Rally ──────────────────────────────────────────────────────────
 
@@ -100,16 +101,48 @@ export const BRADBURY_NETWORK: NetworkConfig = {
     },
 };
 
+// ── Clarke ──────────────────────────────────────────────────────────────────
+// Same chain and RPC as Bradbury (the CLARKE_* overrides fall back to the
+// Bradbury ones); only the staking contracts differ.
+
+export const CLARKE_NETWORK: NetworkConfig = {
+    id: 'clarke-testnet',
+    name: 'Clarke',
+    fullName: 'GenLayer Clarke Testnet',
+    tagline: 'Real-time block, transaction, and validator explorer for GenLayer Testnet Clarke — the Mainnet release candidate.',
+    rpcUrl: process.env.NEXT_PUBLIC_CLARKE_RPC_URL || BRADBURY_RPC_URL,
+    evmRpcUrl: process.env.NEXT_PUBLIC_CLARKE_EVM_RPC_URL || BRADBURY_EVM_RPC_URL,
+    tokenSymbol: 'GEN',
+    displayChainId: CLARKE_CONFIG.displayChainId,
+    explorerUrl: process.env.NEXT_PUBLIC_CLARKE_EXPLORER_URL || CLARKE_CONFIG.explorerUrl,
+    explorerLabel: 'Clarke Testnet Explorer',
+    stakingVersion: 'v0.6',
+    status: 'active',
+    phase: 'Mainnet RC',
+    chainConfig: {
+        stakingContract: {
+            address: CLARKE_CONFIG.stakingContractAddress,
+        },
+        consensusMain: {
+            address: CLARKE_CONFIG.consensusAddress,
+        },
+        consensusData: {
+            address: CLARKE_CONFIG.consensusAddress,
+        },
+    },
+};
+
 // ── Registry ────────────────────────────────────────────────────────────────
 
-// Bradbury is the only active testnet. Asimov is sunset and hidden; its config
-// is kept so it can come back by setting NEXT_PUBLIC_ENABLE_ASIMOV=true.
-// Visitors with Asimov saved in localStorage fall back to the default.
+// Bradbury (default) and Clarke are the active testnets. Asimov is sunset and
+// hidden; its config is kept so it can come back by setting
+// NEXT_PUBLIC_ENABLE_ASIMOV=true. Visitors with a hidden network saved in
+// localStorage fall back to the default.
 const ASIMOV_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ASIMOV === 'true';
 
 export const NETWORKS: NetworkConfig[] = ASIMOV_ENABLED
-    ? [BRADBURY_NETWORK, ASIMOV_NETWORK]
-    : [BRADBURY_NETWORK];
+    ? [BRADBURY_NETWORK, CLARKE_NETWORK, ASIMOV_NETWORK]
+    : [BRADBURY_NETWORK, CLARKE_NETWORK];
 export const DEFAULT_NETWORK = BRADBURY_NETWORK;
 
 export function getNetworkById(id: string | null | undefined): NetworkConfig {
